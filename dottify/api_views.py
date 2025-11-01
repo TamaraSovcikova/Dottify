@@ -22,3 +22,15 @@
 
 5. Statistics API View - using DRF's apiview and the django orm, it will claculte the require statistics
 '''
+
+from rest_framework import viewsets
+from .models import Album, Song
+from .serializers import AlbumSerializer
+
+# --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
+class AlbumViewSet(viewsets.ModelViewSet):  
+    queryset = Album.objects.all()
+    serializer_class = AlbumSerializer
+
+# --- Nested viewset (/api/albums/[album id]/songs/ and /[song id]/) ---
+# requires song serializer TODO 

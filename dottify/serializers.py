@@ -24,5 +24,5 @@ class AlbumSerializer(serializers.ModelSerializer):
     def get_song_set(self,obj):
         return [song.title for song in obj.tracks.all()]
     
- 
+
 
