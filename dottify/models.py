@@ -117,3 +117,37 @@ class Song(models.Model):
                 self.position = 1
             
         super().save(*args, **kwargs)
+
+class Playlist(models.Model):
+
+    class Visibility(models.IntegerChoices):
+        HIDDEN = 0, 'Hidden'  # Default value
+        UNLISTED = 1, 'Unlisted'
+        PUBLIC = 2, 'Public'
+
+    name = models.CharField(null=False,blank=False)
+    created_at = models.DateTimeField(
+        auto_now_add=True, # Automatically set the date/time when created
+        editable=False      # Prevents modification 
+    )
+    songs = models.ManyToManyField(
+        'Song',
+        related_name='playlists'
+    )
+    visibility = models.IntegerField(
+        choices=Visibility.choices,
+        default=Visibility.HIDDEN,
+        blank=False,
+        null=False
+    )    
+    owner = models.ForeignKey(
+        DottifyUser,
+        on_delete=models.CASCADE, # If the owner is deleted, the playlist should be deleted
+        related_name='playlists',
+        blank=False,
+        null=False
+    )
+    
+    def __str__(self):
+        # Displays the name and the owner for clarity
+        return f"{self.name} (Owner: {self.owner.display_name})"
