@@ -23,8 +23,7 @@ class DottifyUser(models.Model):
 def get_max_release_date():    
     # Calculates the date 60*3 180 days (6 months) from today, inclusive
     return timezone.now().date() + timedelta(days=6 * 30)
-
-
+  
 class Album(models.Model):
     
     # --- Choices for Format ---
@@ -73,3 +72,48 @@ class Album(models.Model):
 # returns a formatted string combiting the title and artist's name
     def __str__(self):
         return f"{self.title} by {self.artist_name}"
+
+class Song(models.Model):
+    title = models.CharField(max_length=800, blank=False, null=False)    
+    length = models.PositiveIntegerField(
+        validators=[MinValueValidator(10)],
+        blank=False,
+        null=False
+    )
+    position = models.PositiveIntegerField(
+        null=True, 
+        blank=True,
+        editable=False # Prevents accidental changes via Admin/forms after creation
+    )
+    album = models.ForeignKey(
+        Album,
+        on_delete=models.CASCADE, #Deleting the albums deletes the songs
+        related_name='tracks'
+    )
+
+    class Meta:
+        constraints = [
+            # Song titles must be unique within an album
+            models.UniqueConstraint(
+                fields=['title', 'album'],
+                name='unique_song_title_per_album'
+            )
+        ]
+        ordering = ['album', 'position']
+
+    def save(self, *args, **kwargs):
+        """
+        Overrides save to compute the position automatically only when the song is first added.
+        """
+        # Check if the object is new (has no ID) AND the position is not yet set
+        if not self.id and self.position is None:
+            # highest existing position for songs in this album
+            last_song = Song.objects.filter(album=self.album).order_by('-position').first()
+            
+            # Update the position
+            if last_song and last_song.position is not None:
+                self.position = last_song.position + 1
+            else:
+                self.position = 1
+            
+        super().save(*args, **kwargs)
