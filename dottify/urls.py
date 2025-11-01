@@ -2,7 +2,8 @@ from django.urls import path, include
 from rest_framework_nested import routers
 from .api_views import (
     AlbumViewSet,
-    NestedSongViewSet
+    NestedSongViewSet,
+    SongViewSet
 )
 
 '''
@@ -12,6 +13,8 @@ router = routers.DefaultRouter()
 
 # Basic album router
 router.register(r'albums', AlbumViewSet)
+# Basic routes 3,4 for songs
+router.register(r'songs', SongViewSet)
 
 # Nested router for album -> song relationships
 album_router = routers.NestedDefaultRouter(router, r'albums', lookup='album') #attached to the albums resource. lookup specifies the key in the URL. 
