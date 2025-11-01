@@ -7,6 +7,8 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
 
+#NOTE: For choice field comparissons, I chose to go with the simpler solution where i dont use lazy translation used in the labs for (i18n) - potencially ask for clarification 
+
 #TODO: User is week 4 material - make sure to go over it again
 class DottifyUser(models.Model):
     # Links to the built-in Django User model
@@ -55,7 +57,7 @@ class Album(models.Model):
         blank=False
     )
     format = models.CharField(max_length=4, choices=Format.choices, blank=True, null=True)
-    release_date = models.DateField(validators=[MaxValueValidator(limit_value=get_max_release_date)], null=False, blank=False) #TODO: double check if this is correct format
+    release_date = models.DateField(validators=[MaxValueValidator(limit_value=get_max_release_date)], null=False, blank=False)
     slug = models.SlugField(null=True, blank=True)
   
     class Meta:
