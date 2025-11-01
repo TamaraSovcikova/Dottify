@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.template.defaultfilters import slugify
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
 
@@ -147,7 +149,41 @@ class Playlist(models.Model):
         blank=False,
         null=False
     )
-    
+
     def __str__(self):
         # Displays the name and the owner for clarity
         return f"{self.name} (Owner: {self.owner.display_name})"
+
+
+def validate_half_step(value):
+    """Ensures a Decimal value is a multiple of 0.5."""
+    # Check if the value multiplied by 2 is an integer (e.g., 2.5 * 2 = 5.0)
+    if (value * 2) % 1 != 0:
+        raise ValidationError(
+            _('%(value)s is not a valid rating. Ratings must be in 0.5 increments (e.g., 1.5, 2.0).'),
+            params={'value': value},
+        )
+
+class Rating(models.Model):
+    stars = models.DecimalField(
+        max_digits=2, # Allows numbers up to 9.9. Must be at least 2 for X.Y.
+        decimal_places=1, 
+        validators=[
+            MinValueValidator(0.0),
+            MaxValueValidator(5.0),
+            validate_half_step # unsure if this is what they meant by only in increments 
+        ],
+    )        
+    def __str__(self):
+        return f"Rating: {self.stars}"
+
+class Comment(models.Model):
+    comment_text = models.CharField(
+        max_length=800,
+        blank=False,
+        null=False
+    )
+    
+    def __str__(self):
+        # Shows a snippet of the comment text if too long
+        return self.comment_text[:50] + "..." if len(self.comment_text) > 50 else self.comment_text
