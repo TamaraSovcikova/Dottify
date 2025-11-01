@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Album, Song
+from .models import Album, Song, Playlist, DottifyUser, Rating, Comment
 
 '''
 Three main serializers will be needed: 
@@ -34,7 +34,6 @@ class AlbumSerializer(serializers.ModelSerializer):
 
 class SongSerializer(serializers.ModelSerializer):
     #ensuring the position filed in sot provided during creation, but others still should be done automatically 
-
     class Meta: 
         model = Song
         fiels = ['id', 'title', 'length', 'album']

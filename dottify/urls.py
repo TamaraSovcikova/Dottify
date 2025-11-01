@@ -1,17 +1,26 @@
 from django.urls import path, include
-from rest_framework.routers import DefaultRouter 
+from rest_framework_nested import routers
 from .api_views import (
-    AlbumViewSet 
+    AlbumViewSet,
+    NestedSongViewSet
 )
 
 '''
 will included the routing using the DefulatRoutes and the NestedDefaultRoutes from drf-nested-routers
 '''
-router = DefaultRouter()
-# Route 1 & 2: /api/albums/ and /api/albums/[id]/
-router.register(r'albums', AlbumViewSet, basename='album')
+router = routers.DefaultRouter()
+
+# Basic album router
+router.register(r'albums', AlbumViewSet)
+
+# Nested router for album -> song relationships
+album_router = routers.NestedDefaultRouter(router, r'albums', lookup='album') #attached to the albums resource. lookup specifies the key in the URL. 
+
+# for the album specifi songs /[album_id]/songs and /song_id
+album_router.register(r'songs', NestedSongViewSet, basename='album-songs')
 
 urlpatterns = [
     path('api/', include(router.urls)),
+    path('api/', include(album_router.urls)),
 ]
 
