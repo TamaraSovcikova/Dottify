@@ -24,5 +24,20 @@ class AlbumSerializer(serializers.ModelSerializer):
     def get_song_set(self,obj):
         return [song.title for song in obj.tracks.all()]
     
+     # needed to overrie to handle the missing artist_account field
+    def create(self,validated_data):
+        return Album.objects.create(**validated_data) #unpacking the data for create
+    
+    def update(self, instance,validated_data):
+        return super().update(instance, validated_data)
+
+
+class SongSerializer(serializers.ModelSerializer):
+    #ensuring the position filed in sot provided during creation, but others still should be done automatically 
+
+    class Meta: 
+        model = Song
+        fiels = ['id', 'title', 'length', 'album']
+        read_only_fields = ['position']
 
 
