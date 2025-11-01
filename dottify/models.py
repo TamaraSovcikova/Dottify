@@ -92,7 +92,7 @@ class Song(models.Model):
     album = models.ForeignKey(
         Album,
         on_delete=models.CASCADE, #Deleting the albums deletes the songs
-        related_name='tracks'
+        related_name='tracks' # reference for serializer- might change name later
     )
 
     class Meta:
