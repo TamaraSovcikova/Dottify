@@ -143,6 +143,7 @@ class Playlist(models.Model):
         default=Visibility.HIDDEN,
         blank=False,
         null=False
+        
     )    
     owner = models.ForeignKey(
         DottifyUser,

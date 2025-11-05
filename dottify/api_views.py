@@ -24,8 +24,8 @@
 '''
 
 from rest_framework import viewsets
-from .models import Album, Song
-from .serializers import AlbumSerializer, SongSerializer
+from .models import Album, Song, Playlist
+from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 
 # --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
 class AlbumViewSet(viewsets.ModelViewSet):  
@@ -33,17 +33,21 @@ class AlbumViewSet(viewsets.ModelViewSet):
     serializer_class = AlbumSerializer
 
 # --- Nested viewset (/api/albums/[album id]/songs/ and /[song id]/) ---
-# requires song serializer TODO 
 class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    Read-only view for songs nested under a specific album.
-    """
     serializer_class = SongSerializer 
     
     def get_queryset(self):
         # drf-nested-routers' should auto pass the parents primary key - kwargs dict - parent_lookup[value]
+        #TODO: lab uses a slighly different way, crosscheck which is more correct? 
         return Song.objects.filter(album__pk=self.kwargs['parent_lookup_album__pk'])
     
 class SongViewSet(viewsets.ModelViewSet): 
     queryset = Song.objects.all()
     serializer_class = SongSerializer 
+
+class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = PlaylistSerializer
+    
+    def get_queryset(self):
+        # only public ones are returned
+        return Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)

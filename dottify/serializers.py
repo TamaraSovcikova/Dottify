@@ -36,7 +36,23 @@ class SongSerializer(serializers.ModelSerializer):
     #ensuring the position filed in sot provided during creation, but others still should be done automatically 
     class Meta: 
         model = Song
-        fiels = ['id', 'title', 'length', 'album']
+        fields = ['id', 'title', 'length', 'album']
         read_only_fields = ['position']
+
+class PlaylistSerializer(serializers.ModelSerializer):
+
+    owner = serializers.CharField(source='owner.display_name', read_only=True)
+
+    songs = serializers.HyperlinkedRelatedField(
+        many=True,
+        read_only=True,
+        view_name='song-details'
+    )
+
+    class Meta:
+        model = Playlist
+        fields = ['id', 'name', 'created_at', 'visibility', 'owner', 'songs']
+        read_only_fields = fields
+        
 
 

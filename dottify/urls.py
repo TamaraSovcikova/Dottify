@@ -3,7 +3,8 @@ from rest_framework_nested import routers
 from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
-    SongViewSet
+    SongViewSet,
+    PlaylistViewSet
 )
 
 '''
@@ -15,6 +16,8 @@ router = routers.DefaultRouter()
 router.register(r'albums', AlbumViewSet)
 # Basic routes 3,4 for songs
 router.register(r'songs', SongViewSet)
+
+router.register(r'playlists', PlaylistViewSet)
 
 # Nested router for album -> song relationships
 album_router = routers.NestedDefaultRouter(router, r'albums', lookup='album') #attached to the albums resource. lookup specifies the key in the URL. 
