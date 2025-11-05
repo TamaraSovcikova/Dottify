@@ -29,6 +29,7 @@ from rest_framework import viewsets
 from dottify import views
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
+from django.db.models import Avg
 
 # --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
 class AlbumViewSet(viewsets.ModelViewSet):  
@@ -41,7 +42,6 @@ class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
     
     def get_queryset(self):
         # drf-nested-routers' should auto pass the parents primary key - kwargs dict - parent_lookup[value]
-        #TODO: lab uses a slighly different way, crosscheck which is more correct? 
         return Song.objects.filter(album__pk=self.kwargs['parent_lookup_album__pk'])
     
 class SongViewSet(viewsets.ModelViewSet): 

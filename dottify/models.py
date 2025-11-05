@@ -9,7 +9,6 @@ from datetime import timedelta
 
 #NOTE: For choice field comparissons, I chose to go with the simpler solution where i dont use lazy translation used in the labs for (i18n) - potencially ask for clarification 
 
-#TODO: User is week 4 material - make sure to go over it again
 class DottifyUser(models.Model):
     # Links to the built-in Django User model
     user = models.OneToOneField(
@@ -143,7 +142,7 @@ class Playlist(models.Model):
         default=Visibility.HIDDEN,
         blank=False,
         null=False
-        
+
     )    
     owner = models.ForeignKey(
         DottifyUser,

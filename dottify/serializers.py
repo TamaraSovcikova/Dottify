@@ -46,7 +46,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
     songs = serializers.HyperlinkedRelatedField(
         many=True,
         read_only=True,
-        view_name='song-details'
+        view_name='song-detail' #automatically router generated
     )
 
     class Meta:
