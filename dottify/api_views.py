@@ -66,13 +66,13 @@ class StatisticsAPIView(views.APIView):
             visibility=Playlist.Visibility.PUBLIC
         ).count()
         
-        avg_length_result = Song.objects.aggregate(average_length=Sum('length'))
+        avg_length_result = Song.objects.aggregate(average_length=Avg('length'))
         song_length_average = avg_length_result.get('average_length')
         
-        if song_length_average is not None:
-            song_length_average = float(song_length_average)
+        if song_length_average is not None:        
+            song_length_average = float(song_length_average) 
         else:
-            song_length_average = 0  
+            song_length_average = 0.0
 
         data = {
             'user_count': user_count,
