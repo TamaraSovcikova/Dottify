@@ -23,8 +23,11 @@
 5. Statistics API View - using DRF's apiview and the django orm, it will claculte the require statistics
 '''
 
+from requests import Response
 from rest_framework import viewsets
-from .models import Album, Song, Playlist
+
+from dottify import views
+from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 
 # --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
@@ -51,3 +54,31 @@ class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         # only public ones are returned
         return Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
+    
+class StatisticsAPIView(views.APIView):
+    def get(self, request, format=None):
+        
+        user_count = DottifyUser.objects.count()
+        
+        album_count = Album.objects.count()
+        
+        public_playlist_count = Playlist.objects.filter(
+            visibility=Playlist.Visibility.PUBLIC
+        ).count()
+        
+        avg_length_result = Song.objects.aggregate(average_length=Sum('length'))
+        song_length_average = avg_length_result.get('average_length')
+        
+        if song_length_average is not None:
+            song_length_average = float(song_length_average)
+        else:
+            song_length_average = 0  
+
+        data = {
+            'user_count': user_count,
+            'album_count': album_count,
+            'public_playlist_count': public_playlist_count,
+            'song_length_average': song_length_average,
+        }
+        
+        return Response(data)

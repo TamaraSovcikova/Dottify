@@ -4,7 +4,8 @@ from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
     SongViewSet,
-    PlaylistViewSet
+    PlaylistViewSet,
+    StatisticsAPIView
 )
 
 '''
@@ -28,5 +29,6 @@ album_router.register(r'songs', NestedSongViewSet, basename='album-songs')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/', include(album_router.urls)),
+    path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),
 ]
 
