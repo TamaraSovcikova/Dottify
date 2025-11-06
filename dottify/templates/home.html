@@ -1,0 +1,56 @@
+{% extends "base.html" %} 
+{% block content %}
+    <h1>Dottify Homepage</h1>
+    
+    {% if albums %}
+        <h2>
+            {% if request.user.is_authenticated and not songs %}Your Albums{% else %}Albums{% endif %}
+        </h2>
+        <ul>
+            {% for album in albums %}
+                <li>
+                    <a href="{% url 'album_detail' pk=album.pk slug=album.slug %}">
+                        {{ album.title }} by {{ album.artist_name }}
+                    </a>
+                </li>
+            {% empty %}
+                <li>No albums found.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if playlists %}
+        <h2>
+            {% if request.user.is_authenticated and not albums %}Your Playlists{% else %}Playlists{% endif %}
+        </h2>
+        <ul>
+            {% for playlist in playlists %}
+                <li>
+                    {{ playlist.name }} 
+                    (Owner: <a href="{% url 'user_detail' pk=playlist.owner.pk slug=playlist.owner.display_name|slugify %}">{{ playlist.owner.display_name }}</a>)
+                </li>
+            {% empty %}
+                <li>No playlists found.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if songs %}
+        <h2>All Songs (Admin View)</h2>
+        <ul>
+            {% for song in songs %}
+                <li>
+                    <a href="{% url 'song_detail' pk=song.pk %}">{{ song.title }}</a>
+                    (Album: {{ song.album.title }})
+                </li>
+            {% empty %}
+                <li>No songs found.</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    {% if not albums and not playlists and not songs %}
+        <p>No content to display.</p>
+    {% endif %}
+
+{% endblock content %}
