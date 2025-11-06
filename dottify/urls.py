@@ -31,6 +31,8 @@ urlpatterns = [
 
 # --- HTML VIEWS ---
 urlpatterns += [
+    #Route 1: Home View
+    path('', HomeView.as_view(), name='home'),
     # Route 4: Album Read
     path('albums/<int:pk>/', AlbumDetailView.as_view(), name='album_detail_pk'),
     path('albums/<int:pk>/<slug:slug>/', AlbumDetailView.as_view(), name='album_detail'),

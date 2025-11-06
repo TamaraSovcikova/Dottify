@@ -2,9 +2,21 @@ from django.shortcuts import render
 from django.views.generic import DetailView
 from django.shortcuts import redirect
 from django.urls import reverse
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.models import Group #
+from django.db.models import Q 
 
 from .models import Album, Song, DottifyUser
 
+class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    # Is user an Artist?
+    def test_func(self):
+        return self.request.user.groups.filter(name='Artist').exists()
+    
+class DottifyAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    # Is user a DottifyAdmin?
+    def test_func(self):
+        return self.request.user.groups.fileter(name='DottifyAdmin').exists()
 
 class AlbumDetailView(DetailView):
     model = Album
