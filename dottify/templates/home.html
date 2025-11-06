@@ -9,6 +9,7 @@
         <ul>
             {% for album in albums %}
                 <li>
+                    <!-- Gets the url dynammicaaled baced ont eh route 'album_detail' -->
                     <a href="{% url 'album_detail' pk=album.pk slug=album.slug %}">
                         {{ album.title }} by {{ album.artist_name }}
                     </a>
@@ -26,6 +27,7 @@
         <ul>
             {% for playlist in playlists %}
                 <li>
+                    <!-- Slugify the url as well -->
                     {{ playlist.name }} 
                     (Owner: <a href="{% url 'user_detail' pk=playlist.owner.pk slug=playlist.owner.display_name|slugify %}">{{ playlist.owner.display_name }}</a>)
                 </li>

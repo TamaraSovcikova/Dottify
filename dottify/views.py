@@ -1,5 +1,5 @@
 from django.shortcuts import render
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -111,3 +111,26 @@ class HomeView(ListView):
             context['albums'] = Album.objects.all()
             context['playlists'] = Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
 
+class AlbumSearchView(LoginRequiredMixin, ListView):
+    model = Album
+    template_name = 'dottify/album_search.html'
+    context_object_name = 'albums'
+
+    def get_queryset(self):
+        # base queryset (all albums)
+        queryset = super().get_queryset() 
+        
+        # getting the query from the parapeter '?q='
+        query = self.request.GET.get('q')
+        
+        if query:
+            # 'title__icontains' ORM lookup for case-insensitive containment.
+            queryset = queryset.filter(title__icontains=query)
+            
+        self.query = query
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['query'] = self.query
+        return context 
