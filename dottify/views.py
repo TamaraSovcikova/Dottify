@@ -6,7 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.models import Group #
 from django.db.models import Q 
 
-from .models import Album, Song, DottifyUser
+from .models import Album, Playlist, Song, DottifyUser
 
 class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     # Is user an Artist?
@@ -66,3 +66,48 @@ class UserDetailView(DetailView):
             
         context = self.get_context_data(object=self.object)
         return self.render_to_response(context)
+
+class HomeView(ListView): 
+    model = Album
+    template_name = 'dottify/home.html'
+    context_object_name = 'albums'
+
+    # Controlling all data getting passed to the template
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Initialize everything to empty in the case of the user not meeting specific criteria
+        context['albums'] = Album.objects.none()
+        context['playlists'] = Playlist.objects.none()
+        context['songs'] = Song.objects.none()
+        user = self.request.user
+    
+        # NOTE: Using raw group checks here instead of mixins, as the HomeView 
+        # needs to decide *what* to show based on group, not restrict access.
+        is_admin = user.is_authenticated and user.groups.filter(name='DottifyAdmin').exists()
+        is_artist = user.is_authenticated and user.groups.filter(name='Artist').exists()
+
+        if user.is_authenticated:        
+            try:
+                dottify_user = DottifyUser.objects.get(user=user)
+            except DottifyUser.DoesNotExist:
+            # If lacks a DottifyUser profile, show nothing.
+                return context
+            
+            if is_admin:
+                # 1. Admin Logic (All data)
+                context['albums'] = Album.objects.all()
+                context['playlists'] = Playlist.objects.all()
+                context['songs'] = Song.objects.all()
+            elif is_artist:
+                # 2. Artist Logic (Only own albums)
+                context['albums'] = Album.objects.filter(artist_account=dottify_user)
+                
+            else:
+                # 3. General User Logic (Only own playlists)
+                context['playlists'] = Playlist.objects.filter(owner=dottify_user)
+         
+        else:
+        # Logic for Anonymous Users (albums and public playlists)
+            context['albums'] = Album.objects.all()
+            context['playlists'] = Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
+

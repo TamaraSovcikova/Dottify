@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
 
-from dottify.views import AlbumDetailView, SongDetailView, UserDetailView
+from dottify.views import AlbumDetailView, HomeView, SongDetailView, UserDetailView
 from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
