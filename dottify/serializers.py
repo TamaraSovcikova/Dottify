@@ -1,13 +1,5 @@
 from rest_framework import serializers
-from .models import Album, Song, Playlist, DottifyUser, Rating, Comment
-
-'''
-Three main serializers will be needed: 
-- Song serializer -> position field must be hidden
-- Album Serializer -> artist_account must be hidden, n songs displayed as list of titles
-- Playlist serializer -> is read-only, with two requirements ; disply_name, and list songs are hyperlinks
-
-'''
+from .models import Album, Song, Playlist
 
 class AlbumSerializer(serializers.ModelSerializer): 
     #Albums songs required to be listed as strings

@@ -1,0 +1,30 @@
+{% extends "base.html" %} 
+{% block content %}
+    <h1>Album Search</h1>
+    
+    <form method="GET" action="{% url 'album_search' %}">
+        <input type="text" name="q" placeholder="Search album titles..." value="{{ query|default_if_none:'' }}">
+        <button type="submit">Search</button>
+    </form>
+
+    <hr>
+    
+    {% if query %}
+        <h2>Results for "{{ query }}" ({{ albums.count }} found)</h2>
+    {% else %}
+        <p>Enter a search query above to find albums.</p>
+    {% endif %}
+
+    {% if albums %}
+        <ul>
+            {% for album in albums %}
+                <li>
+                    <a href="{% url 'album_detail' pk=album.pk slug=album.slug %}">
+                        {{ album.title }} by {{ album.artist_name }}
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+{% endblock content %}
