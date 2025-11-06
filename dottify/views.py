@@ -3,10 +3,11 @@ from django.views.generic import DetailView, ListView
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.auth.models import Group #
+
 from django.db.models import Q 
 
 from .models import Album, Playlist, Song, DottifyUser
+from .forms import AlbumForm, SongForm
 
 class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     # Is user an Artist?
