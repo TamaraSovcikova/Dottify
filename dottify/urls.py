@@ -1,5 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
+
+from dottify.views import AlbumDetailView, SongDetailView, UserDetailView
 from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
@@ -8,16 +10,11 @@ from .api_views import (
     StatisticsAPIView
 )
 
-'''
-will included the routing using the DefulatRoutes and the NestedDefaultRoutes from drf-nested-routers
-'''
 router = routers.DefaultRouter()
 
-# Basic album router
+# ---(API Routers and urlpatterns) ---
 router.register(r'albums', AlbumViewSet)
-# Basic routes 3,4 for songs
 router.register(r'songs', SongViewSet)
-
 router.register(r'playlists', PlaylistViewSet)
 
 # Nested router for album -> song relationships
@@ -32,3 +29,16 @@ urlpatterns = [
     path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),
 ]
 
+# --- HTML VIEWS ---
+urlpatterns += [
+    # Route 4: Album Read
+    path('albums/<int:pk>/', AlbumDetailView.as_view(), name='album_detail_pk'),
+    path('albums/<int:pk>/<slug:slug>/', AlbumDetailView.as_view(), name='album_detail'),
+
+    # Route 8: Song Read Detail
+    path('songs/<int:pk>/', SongDetailView.as_view(), name='song_detail'),
+
+    # Route 11: User Detail
+    path('users/<int:pk>/', UserDetailView.as_view(), name='user_detail_pk'),
+    path('users/<int:pk>/<slug:slug>/', UserDetailView.as_view(), name='user_detail'),
+]

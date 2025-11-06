@@ -23,8 +23,8 @@
 5. Statistics API View - using DRF's apiview and the django orm, it will claculte the require statistics
 '''
 
-from requests import Response
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 from dottify import views
 from .models import Album, DottifyUser, Song, Playlist
