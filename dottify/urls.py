@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
 
-from dottify.views import AlbumDetailView, AlbumSearchView, HomeView, SongDetailView, UserDetailView
+from dottify.views import AlbumCreateView, AlbumDetailView, AlbumSearchView, HomeView, SongDetailView, UserDetailView
 from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
@@ -34,8 +34,9 @@ urlpatterns += [
     #Route 1: Home View
     path('', HomeView.as_view(), name='home'),
 
-    # Route 2: Album Search
+    # Route 2,3 Album search, create
     path('albums/search/', AlbumSearchView.as_view(), name='album_search'),
+    path('albums/new/', AlbumCreateView.as_view(), name='album_create'),
 
     # Route 4: Album Read
     path('albums/<int:pk>/', AlbumDetailView.as_view(), name='album_detail_pk'),

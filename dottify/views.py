@@ -135,3 +135,23 @@ class AlbumSearchView(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         context['query'] = self.query
         return context 
+    
+class AlbumCreateView(LoginRequiredMixin):    
+    model = Album
+    form_class = AlbumForm
+    template_name = 'dottify/album_form.html'
+   
+    def form_valid(self, form):
+        # REQUIRED LOGIC -> Automatically set the 'artist_account' field
+        # to the DottifyUser profile associated with the current logged-in user.
+        
+        try:            
+            dottify_user = DottifyUser.objects.get(user=self.request.user)
+        except DottifyUser.DoesNotExist:           
+            # For now, letting know the user is not authorized/set up.
+            form.add_error(None, "You do not have an associated Dottify profile to create albums.")
+            return self.form_invalid(form)
+
+        form.instance.artist_account = dottify_user
+        # Save and redirect
+        return super().form_valid(form)
