@@ -18,7 +18,7 @@ router.register(r'songs', SongViewSet)
 router.register(r'playlists', PlaylistViewSet)
 
 # Nested router for album -> song relationships
-album_router = routers.NestedDefaultRouter(router, r'albums', lookup='pk')#attached to the albums resource. lookup specifies the key in the URL. 
+album_router = routers.NestedDefaultRouter(router, r'albums', lookup='album')#attached to the albums resource. lookup specifies the key in the URL. 
 
 # for the album specifi songs /[album_id]/songs and /song_id
 album_router.register(r'songs', NestedSongViewSet, basename='album-songs')

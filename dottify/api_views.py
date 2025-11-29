@@ -18,8 +18,10 @@ class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SongSerializer 
     
     def get_queryset(self):
+       
+
         # drf-nested-routers' should auto pass the parents primary key - kwargs dict - parent_lookup[value]
-        return Song.objects.filter(album__pk=self.kwargs['parent_lookup_album__pk'])
+        return Song.objects.filter(album__pk=self.kwargs['album_pk'])
     
 class SongViewSet(viewsets.ModelViewSet): 
     queryset = Song.objects.all()

@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.conf import settings
 from django.db import models
 from django.core.validators import MinValueValidator, MaxValueValidator
@@ -53,9 +54,13 @@ class Album(models.Model):
     retail_price = models.DecimalField(
         max_digits=5, # Need 3 digits before the decimal, 2 after (3+2=5)
         decimal_places=2,
-        validators=[MinValueValidator(0.00), MaxValueValidator(999.99)],
+        validators=[
+        MinValueValidator(Decimal('0.00')),      
+        MaxValueValidator(Decimal('999.99'))     
+    ],
         null=False, 
-        blank=False
+        blank=False,
+        default=0.00
     )
     format = models.CharField(max_length=4, choices=Format.choices, blank=True, null=True)
     release_date = models.DateField(validators=[MaxValueValidator(limit_value=get_max_release_date)], null=False, blank=False)
@@ -83,7 +88,8 @@ class Song(models.Model):
     length = models.PositiveIntegerField(
         validators=[MinValueValidator(10)],
         blank=False,
-        null=False
+        null=False,
+        default=0
     )
     position = models.PositiveIntegerField(
         null=True, 
@@ -183,10 +189,10 @@ class Rating(models.Model):
         max_digits=2, # Allows numbers up to 9.9. Must be at least 2 for X.Y.
         decimal_places=1, 
         validators=[
-            MinValueValidator(0.0), # NOTE: check if 0 should be allowed
-            MaxValueValidator(5.0),
-            validate_half_step # unsure if this is what they meant by only in increments 
-        ],
+        MinValueValidator(Decimal('0.0')),    # NOTE: check if 0 should be allowed 
+        MaxValueValidator(Decimal('5.0')),     
+        validate_half_step # unsure if this is what they meant by only in increments 
+    ],        
     )        
 
     created_at = models.DateTimeField(auto_now_add=True) # for 90-day calculation
