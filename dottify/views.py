@@ -1,3 +1,4 @@
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.generic import DetailView, ListView
 from django.shortcuts import redirect
@@ -152,6 +153,52 @@ class AlbumCreateView(LoginRequiredMixin):
             form.add_error(None, "You do not have an associated Dottify profile to create albums.")
             return self.form_invalid(form)
 
-        form.instance.artist_account = dottify_user
-        # Save and redirect
+        form.instance.artist_account = dottify_user      
         return super().form_valid(form)
+
+class AlbumUpdateView(LoginRequiredMixin):
+    model = Album 
+    form_class = AlbumForm
+    template_name = 'dottify/album_form.html'
+
+    # Authorization on GET
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+        
+        # Skip check if admin admin
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
+        
+        if not user.is_authenticated:
+            raise Http404("You must be logged in to edit an album.")
+
+        # if Artist AND not the album owner, deny access (403)
+        if not is_admin:
+            try:                
+                album_artist_user = obj.artist_account.user 
+                
+                if album_artist_user != user:                  
+                    return HttpResponseForbidden("You are not authorized to edit this album.")
+                    
+            except AttributeError:
+                # If account or link is missing
+                 return HttpResponseForbidden("Album ownership could not be verified.")
+
+        return obj
+
+    # Authorization on POST
+    def form_valid(self, form):
+        user = self.request.user
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        
+        # Re-verify ownership before saving
+        try:
+            album_artist_user = self.get_object().artist_account.user
+        except AttributeError:
+            return HttpResponseForbidden("Album ownership could not be verified during save.")
+
+        if is_admin or album_artist_user == user:         
+            return super().form_valid(form)
+        else:
+            # If authorization failed during POST submission
+            return HttpResponseForbidden("You are not authorized to save changes to this album.")
