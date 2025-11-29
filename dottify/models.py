@@ -6,8 +6,10 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from datetime import timedelta
+from django.contrib.auth.models import User
 
-#NOTE: For choice field comparissons, I chose to go with the simpler solution where i dont use lazy translation used in the labs for (i18n) - potencially ask for clarification 
+#NOTE: For choice field comparissons, I chose to go with the simpler solution where i dont use lazy translation used in the labs for (i18n) 
+# - potencially ask for clarification 
 
 class DottifyUser(models.Model):
     # Links to the built-in Django User model
@@ -180,12 +182,24 @@ class Rating(models.Model):
         return f"Rating: {self.stars}"
 
 class Comment(models.Model):
+    album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
     comment_text = models.CharField(
         max_length=800,
         blank=False,
         null=False
     )
+
+    def get_user_display_name(self):       
+        try:
+            return DottifyUser.objects.get(user=self.user).display_name
+        except DottifyUser.DoesNotExist:
+            return self.user.username # Fallback
     
     def __str__(self):
         # Shows a snippet of the comment text if too long
         return self.comment_text[:50] + "..." if len(self.comment_text) > 50 else self.comment_text
+    
+
