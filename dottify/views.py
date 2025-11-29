@@ -1,8 +1,8 @@
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import render
-from django.views.generic import DetailView, ListView, UpdateView, CreateView
+from django.views.generic import DetailView, ListView, UpdateView, CreateView, DeleteView
 from django.shortcuts import redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from django.db.models import Q 
@@ -202,3 +202,29 @@ class AlbumUpdateView(LoginRequiredMixin, UpdateView):
         else:
             # If authorization failed during POST submission
             return HttpResponseForbidden("You are not authorized to save changes to this album.")
+
+class AlbumDeleteView(LoginRequiredMixin, DeleteView):
+    model = Album
+    template_name = 'dottify/album_confirm_delete.html'
+    
+    # successful deletion -> redirect to the homepage.
+    success_url = reverse_lazy('home') 
+
+    # override to enforce authorization
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        user = self.request.user
+        
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
+        is_owner = False
+        try:            
+            if obj.artist_account.user == user:
+                is_owner = True
+        except AttributeError:            
+            pass 
+     
+        if not is_admin and not is_owner:
+            return HttpResponseForbidden("You are not authorized to delete this album.")
+
+        # If authorized (Admin OR Owner) proceed
+        return obj
