@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <h1>{{ song.title }}</h1>
+    <p class="lead text-muted">From Album: {{ song.album.title }}</p>
+    
+    <hr>
+    
+    <div class="card p-3 bg-light">
+        <h5 class="card-title">Ratings Summary</h5>
+        <p class="card-text mb-1">
+            **Average rating of all time:** **{{ all_time_rating }}**
+        </p>
+        <p class="card-text mb-0">
+            **Recent rating average (last 90 days):** **{{ recent_rating }}**
+        </p>
+    </div>
+    
+</div>
+{% endblock content %}

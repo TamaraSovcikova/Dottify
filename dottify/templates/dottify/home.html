@@ -1,15 +1,15 @@
 {% extends "base.html" %} 
 {% block content %}
     <h1>Dottify Homepage</h1>
-    
+
     {% if albums %}
-        <h2>
-            {% if request.user.is_authenticated and not songs %}Your Albums{% else %}Albums{% endif %}
-        </h2>
+        
+        <p>Total results found: {{ albums|length }}</p>
+        
+        <h2>Albums</h2>
         <ul>
             {% for album in albums %}
                 <li>
-                    <!-- Gets the url dynammicaaled baced ont eh route 'album_detail' -->
                     <a href="{% url 'album_detail' pk=album.pk slug=album.slug %}">
                         {{ album.title }} by {{ album.artist_name }}
                     </a>
@@ -21,15 +21,11 @@
     {% endif %}
 
     {% if playlists %}
-        <h2>
-            {% if request.user.is_authenticated and not albums %}Your Playlists{% else %}Playlists{% endif %}
-        </h2>
+        <h2>Playlists</h2>
         <ul>
             {% for playlist in playlists %}
                 <li>
-                    <!-- Slugify the url as well -->
-                    {{ playlist.name }} 
-                    (Owner: <a href="{% url 'user_detail' pk=playlist.owner.pk slug=playlist.owner.display_name|slugify %}">{{ playlist.owner.display_name }}</a>)
+                    {{ playlist.name }} (Owner: {{ playlist.owner.display_name }})
                 </li>
             {% empty %}
                 <li>No playlists found.</li>
@@ -38,21 +34,16 @@
     {% endif %}
 
     {% if songs %}
-        <h2>All Songs (Admin View)</h2>
+        <h2>All Songs</h2>
         <ul>
             {% for song in songs %}
                 <li>
                     <a href="{% url 'song_detail' pk=song.pk %}">{{ song.title }}</a>
-                    (Album: {{ song.album.title }})
                 </li>
             {% empty %}
                 <li>No songs found.</li>
             {% endfor %}
         </ul>
-    {% endif %}
-
-    {% if not albums and not playlists and not songs %}
-        <p>No content to display.</p>
     {% endif %}
 
 {% endblock content %}

@@ -169,17 +169,30 @@ def validate_half_step(value):
         )
 
 class Rating(models.Model):
+    
+    # Link to the Song model
+    song = models.ForeignKey(
+        'Song', 
+        on_delete=models.CASCADE, 
+        related_name='ratings',
+        null=False,
+        blank=False
+    )
+
     stars = models.DecimalField(
         max_digits=2, # Allows numbers up to 9.9. Must be at least 2 for X.Y.
         decimal_places=1, 
         validators=[
-            MinValueValidator(0.0),
+            MinValueValidator(0.0), # NOTE: check if 0 should be allowed
             MaxValueValidator(5.0),
             validate_half_step # unsure if this is what they meant by only in increments 
         ],
     )        
+
+    created_at = models.DateTimeField(auto_now_add=True) # for 90-day calculation
+                                     
     def __str__(self):
-        return f"Rating: {self.stars}"
+        return f"Rating: {self.stars} for Song: {self.song.title}"
 
 class Comment(models.Model):
     album = models.ForeignKey(Album, on_delete=models.CASCADE, related_name='comments')

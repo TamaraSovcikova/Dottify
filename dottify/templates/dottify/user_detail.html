@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+    
+    <h1>User Profile: {{ dottify_user.display_name }}</h1>
+
+    <hr>
+
+    <h3>Playlists</h3>
+    {% for playlist in dottify_user.playlists.all %}
+        <h4>{{ playlist.name }}</h4>
+        <ul>
+            {% for song in playlist.songs.all %}
+                <li>{{ song.title }}</li>
+            {% empty %}
+                <li>Playlist has no songs.</li>
+            {% endfor %}
+        </ul>
+    {% empty %}
+        <p>This user has no playlists.</p>
+    {% endfor %}
+
+{% endblock content %}

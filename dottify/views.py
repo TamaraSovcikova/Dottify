@@ -4,6 +4,9 @@ from django.views.generic import DetailView, ListView, UpdateView, CreateView, D
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db.models import Avg
+from django.utils import timezone 
+from datetime import timedelta 
 
 from django.db.models import Q 
 
@@ -47,6 +50,28 @@ class SongDetailView(DetailView):
     model = Song
     template_name = 'dottify/song_detail.html'
     context_object_name = 'song'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        song = self.object # The song instance     
+        
+        all_time_avg = song.ratings.aggregate(Avg('score'))['score__avg']
+        
+        # 90-Day Average
+        ninety_days_ago = timezone.now() - timedelta(days=90)
+        recent_avg = song.ratings.filter(created_at__gte=ninety_days_ago).aggregate(Avg('score'))['score__avg']
+
+        # format N.N or 'N.A'
+        def format_rating(avg_value):
+            if avg_value is not None:
+                # Format to exactly one decimal place
+                return f"{avg_value:.1f}"
+            return "N.A"
+
+        context['all_time_rating'] = format_rating(all_time_avg)
+        context['recent_rating'] = format_rating(recent_avg)
+        
+        return context
 
 class UserDetailView(DetailView):
     model = DottifyUser
