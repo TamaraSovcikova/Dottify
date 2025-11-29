@@ -228,3 +228,70 @@ class AlbumDeleteView(LoginRequiredMixin, DeleteView):
 
         # If authorized (Admin OR Owner) proceed
         return obj
+    
+class SongCreateView(ArtistRequiredMixin, CreateView):
+    model = Song
+    form_class = SongForm
+    template_name = 'dottify/song_form.html'
+
+    success_url = reverse_lazy('home')
+    def get_form_kwargs(self):
+        """Pass the current user for filtering"""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+class SongUpdateView(LoginRequiredMixin, UpdateView):
+    model = Song
+    form_class = SongForm
+    template_name = 'dottify/song_form.html'
+
+    # UpdateView uses default success_url so i dont have to define
+    
+    def get_form_kwargs(self):
+        """Pass the current user for filtering"""
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset) # Tsong being edited
+        user = self.request.user
+        
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
+        is_owner = False
+        try:
+            # Song -> Album -> Artist Account -> User
+            if obj.album.artist_account.user == user:
+                is_owner = True
+        except AttributeError:           
+            pass 
+
+        if not is_admin and not is_owner:
+            return HttpResponseForbidden("You are not authorized to edit this song. You must be the owner of the album it belongs to or a Dottify Admin.")
+
+        return obj
+    
+
+class SongDeleteView(LoginRequiredMixin, DeleteView):
+    model = Song
+    template_name = 'dottify/song_confirm_delete.html'
+    success_url = reverse_lazy('home') 
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset) 
+        user = self.request.user
+        
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
+        is_owner = False
+        try:
+            # ong -> Album -> Artist Account -> User
+            if obj.album.artist_account.user == user:
+                is_owner = True
+        except AttributeError:            
+            pass 
+        
+        if not is_admin and not is_owner:
+            return HttpResponseForbidden("You are not authorized to delete this song. You must be the owner of the album it belongs to or a Dottify Admin.")
+       
+        return obj
