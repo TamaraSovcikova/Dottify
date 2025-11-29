@@ -2,8 +2,8 @@
 
 from rest_framework import viewsets
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from dottify import views
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 from django.db.models import Avg
@@ -27,12 +27,13 @@ class SongViewSet(viewsets.ModelViewSet):
 
 class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PlaylistSerializer
+    queryset = Playlist.objects.all()
     
     def get_queryset(self):
         # only public ones are returned
         return Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
     
-class StatisticsAPIView(views.APIView):
+class StatisticsAPIView(APIView):
     def get(self, request, format=None):
         
         user_count = DottifyUser.objects.count()

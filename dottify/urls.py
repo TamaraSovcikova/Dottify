@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework_nested import routers
 
-from dottify.views import AlbumCreateView, AlbumDeleteView, AlbumDetailView, AlbumSearchView, AlbumUpdateView, HomeView, SongCreateView, SongDetailView, SongUpdateView, UserDetailView
+from dottify.views import AlbumCreateView, AlbumDeleteView, AlbumDetailView, AlbumSearchView, AlbumUpdateView, HomeView, SongCreateView, SongDeleteView, SongDetailView, SongUpdateView, UserDetailView
 from .api_views import (
     AlbumViewSet,
     NestedSongViewSet,
@@ -18,7 +18,7 @@ router.register(r'songs', SongViewSet)
 router.register(r'playlists', PlaylistViewSet)
 
 # Nested router for album -> song relationships
-album_router = routers.NestedDefaultRouter(router, r'albums', lookup='album') #attached to the albums resource. lookup specifies the key in the URL. 
+album_router = routers.NestedDefaultRouter(router, r'albums', lookup='pk')#attached to the albums resource. lookup specifies the key in the URL. 
 
 # for the album specifi songs /[album_id]/songs and /song_id
 album_router.register(r'songs', NestedSongViewSet, basename='album-songs')
@@ -54,6 +54,6 @@ urlpatterns += [
     # Route 7, 9, 10
     path('songs/new/', SongCreateView.as_view(), name='song_create'),
     path('songs/<int:pk>/edit/', SongUpdateView.as_view(), name='song_edit'),
-    path('songs/<int:pk>/delete/', SongDeleteView.as_view(), name='song_delete'), # <-
+    path('songs/<int:pk>/delete/', SongDeleteView.as_view(), name='song_delete'), 
     
 ]
