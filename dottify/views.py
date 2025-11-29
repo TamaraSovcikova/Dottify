@@ -1,6 +1,6 @@
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import render
-from django.views.generic import DetailView, ListView
+from django.views.generic import DetailView, ListView, UpdateView, CreateView
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -137,7 +137,7 @@ class AlbumSearchView(LoginRequiredMixin, ListView):
         context['query'] = self.query
         return context 
     
-class AlbumCreateView(LoginRequiredMixin):    
+class AlbumCreateView(LoginRequiredMixin, CreateView):    
     model = Album
     form_class = AlbumForm
     template_name = 'dottify/album_form.html'
@@ -156,7 +156,7 @@ class AlbumCreateView(LoginRequiredMixin):
         form.instance.artist_account = dottify_user      
         return super().form_valid(form)
 
-class AlbumUpdateView(LoginRequiredMixin):
+class AlbumUpdateView(LoginRequiredMixin, UpdateView):
     model = Album 
     form_class = AlbumForm
     template_name = 'dottify/album_form.html'
