@@ -1,9 +1,8 @@
 
 from django import forms
-from .models import Album, Song, DottifyUser
+from .models import Album, Rating, Song, DottifyUser, Comment
 
 # To be implemented in templteas {{form.as_p}}
-
 
 # --- Album Form (For Routes 3 and 5) ---
 class AlbumForm(forms.ModelForm):
@@ -18,11 +17,10 @@ class AlbumForm(forms.ModelForm):
             'release_date'
         ]
 
-
 # --- Song Form (For Routes 7 and 9) ---
 class SongForm(forms.ModelForm):
     # Position is auto computed in the model's save method.
-    # Have to inlucde album because song cannot exist without it 
+    # Song cannot exist without Album  
     class Meta:
         model = Song
         fields = ['album', 'title', 'length']

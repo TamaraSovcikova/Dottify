@@ -4,8 +4,13 @@
 <div class="container mt-4">
     
     <h1>{{ song.title }}</h1>
-    <p class="lead text-muted">From Album: {{ song.album.title }}</p>
     
+    <p class="lead text-muted">
+        From Album: 
+        <a href="{% url 'album_detail' pk=song.album.pk slug=song.album.slug %}">
+            **{{ song.album.title }}**
+        </a>
+    </p> 
     <hr>
     
     <div class="card p-3 bg-light">

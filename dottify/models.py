@@ -9,9 +9,6 @@ from django.utils import timezone
 from datetime import timedelta
 from django.contrib.auth.models import User
 
-#NOTE: For choice field comparissons, I chose to go with the simpler solution where i dont use lazy translation used in the labs for (i18n) 
-# - potencially ask for clarification 
-
 class DottifyUser(models.Model):
     # Links to the built-in Django User model
     user = models.OneToOneField(
@@ -25,14 +22,12 @@ class DottifyUser(models.Model):
     def __str__(self):
         return self.display_name
 
-# Helper function for Albums release date calculation
 def get_max_release_date():    
     # Calculates the date 60*3 180 days (6 months) from today, inclusive
     return timezone.now().date() + timedelta(days=6 * 30)
   
 class Album(models.Model):
     
-    # --- Choices for Format ---
     class Format(models.TextChoices):
         SINGLE = 'SNGL', 'Single'
         REMASTER = 'RMST', 'Remaster'
@@ -40,7 +35,7 @@ class Album(models.Model):
         COMPILATION = 'COMP', 'Compilation'
         LIVE_RECORDING = 'LIVE', 'Live Recording'
 
-    cover_image = models.ImageField(default='no_cover.jpg', blank=True, null=True) #blank=True gives the option of empty fields
+    cover_image = models.ImageField(default='no_cover.jpg', blank=True, null=True)
     title = models.CharField(max_length=800)
     artist_name = models.CharField(max_length=800)
     
@@ -80,7 +75,6 @@ class Album(models.Model):
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
-# returns a formatted string combiting the title and artist's name
     def __str__(self):
         return f"{self.title} by {self.artist_name}"
 
@@ -99,8 +93,8 @@ class Song(models.Model):
     )
     album = models.ForeignKey(
         Album,
-        on_delete=models.CASCADE, #Deleting the albums deletes the songs
-        related_name='tracks' # reference for serializer- might change name later
+        on_delete=models.CASCADE, #Deleting the albums deletes the songs  
+        related_name='tracks',
     )
 
     class Meta:
@@ -131,16 +125,15 @@ class Song(models.Model):
         super().save(*args, **kwargs)
 
 class Playlist(models.Model):
-
     class Visibility(models.IntegerChoices):
-        HIDDEN = 0, 'Hidden'  # Default value
+        HIDDEN = 0, 'Hidden'  # Default
         UNLISTED = 1, 'Unlisted'
-        PUBLIC = 2, 'Public'
+        PUBLIC = 2, 'Public' 
 
     name = models.CharField(null=False,blank=False)
     created_at = models.DateTimeField(
-        auto_now_add=True, # Automatically set the date/time when created
-        editable=False      # Prevents modification 
+        auto_now_add=True, # set the date/time when created
+        editable=False  
     )
     songs = models.ManyToManyField(
         'Song'       
@@ -154,7 +147,7 @@ class Playlist(models.Model):
     )    
     owner = models.ForeignKey(
         DottifyUser,
-        on_delete=models.CASCADE, # If the owner is deleted, the playlist should be deleted        
+        on_delete=models.CASCADE, # if owner then playlist also        
         blank=False,
         null=False
     )
@@ -163,19 +156,15 @@ class Playlist(models.Model):
         # Displays the name and the owner for clarity
         return f"{self.name} (Owner: {self.owner.display_name})"
 
-
 def validate_half_step(value):
-    """Ensures a Decimal value is a multiple of 0.5."""
-    # Check if the value multiplied by 2 is an integer (e.g., 2.5 * 2 = 5.0)
-    if (value * 2) % 1 != 0:
+    """Checks if a rating value is in 0.5 increments (e.g., 1.5, 2.0, 3.5)."""
+    if value is not None and (value * 10) % 5 != 0:
         raise ValidationError(
-            _('%(value)s is not a valid rating. Ratings must be in 0.5 increments (e.g., 1.5, 2.0).'),
-            params={'value': value},
+            "Rating must be in 0.5 increments (e.g., 1.5, 2.0, 3.5)."
         )
-
+    
 class Rating(models.Model):
     
-    # Link to the Song model
     song = models.ForeignKey(
         'Song', 
         on_delete=models.CASCADE,         
@@ -190,18 +179,9 @@ class Rating(models.Model):
             # Enforce the minimum and maximum range (0 to 5.0)
             MinValueValidator(0.0), 
             MaxValueValidator(5.0),
+            validate_half_step,
         ]
-    )     
-
-    # 0.5 increment rule
-    def clean(self):
-        # Check if the stars value is a multiple of 0.5 (e.g., 0.0, 0.5, 1.0, 1.5, ...)        
-        if self.stars is not None and (self.stars * 10) % 5 != 0:
-            raise ValidationError(
-                {'stars': "Rating must be in 0.5 increments (e.g., 1.5, 2.0, 3.5)."}
-            )
-        
-        super().clean()
+    )        
 
     created_at = models.DateTimeField(auto_now_add=True) # for 90-day calculation
                                      
@@ -225,8 +205,7 @@ class Comment(models.Model):
         except DottifyUser.DoesNotExist:
             return self.user.username # Fallback
     
-    def __str__(self):
-        # Shows a snippet of the comment text if too long
-        return self.comment_text[:50] + "..." if len(self.comment_text) > 50 else self.comment_text
+    def __str__(self):        
+        return self.comment_text
     
 

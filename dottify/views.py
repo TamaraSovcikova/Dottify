@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.http import HttpResponseForbidden
 from django.views.generic import DetailView, ListView, UpdateView, CreateView, DeleteView
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
@@ -7,19 +7,25 @@ from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Avg
 from django.utils import timezone 
 from datetime import timedelta 
-
-from django.db.models import Q 
-
 from .models import Album, Playlist, Song, DottifyUser
 from .forms import AlbumForm, SongForm
 
+class ArtistOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Checks if the user is authenticated and belongs to either the 'Artist' 
+    or the 'DottifyAdmin' group.
+    """
+    def test_func(self):
+        user = self.request.user
+        is_artist = user.groups.filter(name='Artist').exists()
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        return is_artist or is_admin
+
 class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    # Is user an Artist?
     def test_func(self):
         return self.request.user.groups.filter(name='Artist').exists()
     
 class DottifyAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    # Is user a DottifyAdmin?
     def test_func(self):
         return self.request.user.groups.filter(name='DottifyAdmin').exists()
     
@@ -50,6 +56,13 @@ class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
             return owner_user == user
         except Exception:            
             return False
+    
+    def handle_no_permission(self):        
+        if self.request.user.is_authenticated:            
+            return HttpResponseForbidden("You do not have permission to view or modify this content.")
+        
+        # If not authenticated, use default LoginRequiredMixin
+        return super().handle_no_permission()
 
 class AlbumDetailView(DetailView):
     model = Album
@@ -63,7 +76,6 @@ class AlbumDetailView(DetailView):
         required_slug = self.object.slug
         current_slug = kwargs.get('slug')
             
-        # If the provided slug is incrrect OR no slug was provided
         if current_slug != required_slug or 'slug' not in kwargs:
             # Redirect to the canonical URL with the correct slug
             return redirect(
@@ -112,8 +124,7 @@ class UserDetailView(DetailView):
         required_slug = self.object.display_name.lower().replace(' ', '-')        
         current_slug = kwargs.get('slug') 
         
-        if current_slug != required_slug:
-            # Redirect to the canonical URL
+        if current_slug != required_slug or current_slug is None:            
             return redirect(
                 reverse(
                     'user_detail', 
@@ -137,7 +148,6 @@ class HomeView(ListView):
     def get_context_data(self, **kwargs):        
         context = super().get_context_data(**kwargs)
         
-        # Initialize QuerySets to empty/none
         albums_qs = Album.objects.none()
         playlists_qs = Playlist.objects.none()
         songs_qs = Song.objects.none() 
@@ -168,7 +178,7 @@ class HomeView(ListView):
 
         context['albums'] = albums_qs
         context['playlists'] = playlists_qs
-        context['songs'] = songs_qs # Will be empty for most users
+        context['songs'] = songs_qs
               
         total_count = albums_qs.count() 
         # Total results found: N' requirement.
@@ -181,7 +191,6 @@ class AlbumSearchView(LoginRequiredMixin, ListView):
     context_object_name = 'albums'    
 
     def get_queryset(self):
-        # base queryset (all albums)
         queryset = super().get_queryset() 
         
         # getting the query from the parapeter '?q='
@@ -200,19 +209,17 @@ class AlbumSearchView(LoginRequiredMixin, ListView):
         context['total_results_found'] = context['albums'].count()
         return context 
     
-class AlbumCreateView(LoginRequiredMixin, CreateView):    
+class AlbumCreateView(ArtistOrAdminRequiredMixin, CreateView):    
     model = Album
     form_class = AlbumForm
     template_name = 'dottify/album_form.html'
    
     def form_valid(self, form):
-        # REQUIRED LOGIC -> Automatically set the 'artist_account' field
-        # to the DottifyUser profile associated with the current logged-in user.
+        # REQUIRED LOGIC -> Automatically set the 'artist_account' field        
         
         try:            
             dottify_user = DottifyUser.objects.get(user=self.request.user)
         except DottifyUser.DoesNotExist:           
-            # For now, letting know the user is not authorized/set up.
             form.add_error(None, "You do not have an associated Dottify profile to create albums.")
             return self.form_invalid(form)
 
@@ -245,7 +252,7 @@ class AlbumDeleteView(ContentOwnerOrAdminMixin, DeleteView):
         album = self.get_object() 
         return album.artist_account.user
     
-class SongCreateView(ArtistRequiredMixin, CreateView):
+class SongCreateView(ArtistOrAdminRequiredMixin, CreateView):
     model = Song
     form_class = SongForm
     template_name = 'dottify/song_form.html'
@@ -256,6 +263,23 @@ class SongCreateView(ArtistRequiredMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs['user'] = self.request.user
         return kwargs
+    
+    def form_valid(self, form):
+        user = self.request.user
+        selected_album = form.cleaned_data.get('album')
+        
+        # --- Post Authorization Check (Route 7) ---
+        if user.groups.filter(name='Artist').exists():            
+            try:
+                dottify_user = DottifyUser.objects.get(user=user)
+            except DottifyUser.DoesNotExist:                
+                return HttpResponseForbidden("User profile not found. Cannot create songs.")
+            
+            if selected_album.artist_account != dottify_user:                
+                return HttpResponseForbidden("You can only create songs for your own albums.")
+            
+        # If the user is an Admin, or is a matching Artist, proceed
+        return super().form_valid(form)
 
 class SongUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     model = Song
