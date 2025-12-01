@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Album, Song, Playlist
+from rest_framework.validators import UniqueTogetherValidator
+from .models import Album, Song, Playlist, DottifyUser
 
 class AlbumSerializer(serializers.ModelSerializer): 
     #Albums songs required to be listed as strings
@@ -12,9 +13,31 @@ class AlbumSerializer(serializers.ModelSerializer):
         ]
         # artist_account left seperate since it must not be visisble or set via this route
         read_only_fields = ['artist_account', 'slug']
+
+        validators = [
+            UniqueTogetherValidator(
+                queryset=Album.objects.all(),
+                fields=['title', 'artist_name', 'format'],
+                message="An album with this title, artist name, and format already exists."
+            )
+        ]
     
     def get_song_set(self,obj):
         return [song.title for song in obj.tracks.all()]    
+    
+    def create(self, validated_data):        
+        user = self.context['request'].user
+        
+        try:
+            dottify_user = DottifyUser.objects.get(user=user)
+        except DottifyUser.DoesNotExist:
+            # This should ideally be caught by permissions but is a safety net.
+            raise serializers.ValidationError({"artist_account": "No DottifyUser profile found for the logged-in user."})
+
+        # Inject the artist_account into the validated data
+        validated_data['artist_account'] = dottify_user
+        
+        return Album.objects.create(**validated_data)
 
 
 class SongSerializer(serializers.ModelSerializer):
@@ -23,6 +46,26 @@ class SongSerializer(serializers.ModelSerializer):
         model = Song
         fields = ['id', 'title', 'length', 'album']
         read_only_fields = ['position']
+    
+    # Enforce Route 7 security requirement
+    def create(self, validated_data):        
+        user = self.context['request'].user        
+        album = validated_data.get('album')
+        
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        
+        if not is_admin:            
+            try:
+                album_owner_user = album.artist_account.user
+            except AttributeError:
+                # Album is missing an artist_account link
+                raise serializers.ValidationError({"album": "The album ownership cannot be verified."})
+
+            if album_owner_user != user:
+                # If the user is not an Admin AND not the owner -> reject
+                raise serializers.ValidationError({"album": "You are not authorized to add a song to this album."})
+        
+        return Song.objects.create(**validated_data)
 
 class PlaylistSerializer(serializers.ModelSerializer):
 

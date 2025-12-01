@@ -4,13 +4,14 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import permissions
+from rest_framework import filters
 
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 from django.db.models import Avg
 
 
-class IsOwnerOrReadOnly(permissions.BasePermission):
+class IsAdminOrOwner(permissions.BasePermission):
     """
     Custom permission to only allow the owner (Album's artist_account) or 
     a DottifyAdmin to edit or delete the Album object.
@@ -28,35 +29,44 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
         if is_admin:
             return True
         
-        # (PUT/PATCH/DELETE) are only allowed to the owner.
-        # Check if obj.artist_account is set and its linked User matches request.user
-        if obj.artist_account and obj.artist_account.user == request.user:
+        # Check for ownership -> Artist user logic
+
+        # Check 1: If the object is an Album
+        if isinstance(obj, Album) and obj.artist_account and obj.artist_account.user == request.user:
             return True
+                
+        # Check 2: If the object is a Song (owner is song's album's artist)
+        if isinstance(obj, Song) and obj.album and obj.album.artist_account and obj.album.artist_account.user == request.user:
+            return True      
 
         return False
 
 # --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
 class AlbumViewSet(viewsets.ModelViewSet):  
-    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
-    
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrOwner]
+
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title'] # Only title is used for search in Route 2
+
 # --- Nested viewset (/api/albums/[album id]/songs/ and /[song id]/) ---
 class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = SongSerializer 
+    permission_classes = [permissions.AllowAny] 
+    serializer_class = SongSerializer   
     
-    def get_queryset(self):
-       
-
+    def get_queryset(self):      
         # drf-nested-routers' should auto pass the parents primary key - kwargs dict - parent_lookup[value]
         return Song.objects.filter(album__pk=self.kwargs['album_pk'])
     
 class SongViewSet(viewsets.ModelViewSet): 
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsAdminOrOwner]
     queryset = Song.objects.all()
     serializer_class = SongSerializer 
 
 class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.AllowAny] # Allow all reads since filtering handles visibility
     serializer_class = PlaylistSerializer
     queryset = Playlist.objects.all()
     
