@@ -31,14 +31,33 @@ class CustomTestSheetCAndD(TestCase):
         self.artist_profile = DottifyUser.objects.create(user=self.artist_user, display_name='Artist Owner')
         DottifyUser.objects.create(user=self.general_user, display_name='General Profile')
 
-        self.album = Album.objects.create(title='Test Album', artist_account=self.artist_profile, artist_name='Artist Test')
-        self.other_album = Album.objects.create(title='Unique Album Title', artist_account=self.artist_profile, artist_name='Other Artist')
+        self.album = Album.objects.create(
+            title='Test Album', 
+            artist_account=self.artist_profile, 
+            artist_name='Artist Test',
+            release_date=timezone.now().date(),
+            retail_price=9.99,  
+            format='DLUX'       
+        )
+        self.other_album = Album.objects.create(
+            title='Unique Album Title', 
+            artist_account=self.artist_profile, 
+            artist_name='Other Artist',
+            release_date=timezone.now().date(),
+            retail_price=12.50, 
+            format='SNGL'      
+        ) 
         self.song = Song.objects.create(title='Test Song', album=self.album, length=180)
         
         # Enhancements Data
         Comment.objects.create(album=self.album, user=self.general_user, comment_text='Great album for testing!')
-        Rating.objects.create(song=self.song, score=5, created_at=timezone.now() - timedelta(days=100)) # All-time
-        Rating.objects.create(song=self.song, score=3, created_at=timezone.now() - timedelta(days=10))  # Recent
+        Rating.objects.create(song=self.song, stars=5, created_at=timezone.now() - timedelta(days=100)) # All-time
+        Rating.objects.create(song=self.song, stars=3, created_at=timezone.now() - timedelta(days=10))  # Recent
+
+        other_artist_profile = DottifyUser.objects.create(
+            user=self.other_artist_user, 
+            display_name='Other Artist Profile'
+        )
 
         self.client = Client()
 
@@ -54,7 +73,12 @@ class CustomTestSheetCAndD(TestCase):
         """Non-Owner Artist should be forbidden from editing an album (Route 5)."""
         # Create an album owned by the other artist for setup validation
         other_artist_profile = DottifyUser.objects.get(user=self.other_artist_user)
-        non_owned_album = Album.objects.create(title='Not Mine', artist_account=other_artist_profile, artist_name='Someone Else')
+        non_owned_album = Album.objects.create(
+        title='Not Mine', 
+        artist_account=other_artist_profile, 
+        artist_name='Someone Else',
+        release_date=timezone.now().date()
+    )
         
         self.client.login(username='artist', password='password')
         response = self.client.get(reverse('album_edit', kwargs={'pk': non_owned_album.pk}))
@@ -75,10 +99,12 @@ class CustomTestSheetCAndD(TestCase):
     # --- Home View/List Count/Search Tests (Routes 1 & 2, Sheet D) ---
 
     def test_home_view_list_count_enhancement(self):
-        """Home view must show 'Total results found: N' exactly (Sheet D)."""
+        """Home view must show 'Total results found: N' exactly (Sheet D)."""           
+
         response = self.client.get(reverse('home'))
+        
         self.assertContains(response, 'Total results found: 2')
-        self.assertNotContains(response, 'Total results found: 02') 
+        self.assertNotContains(response, 'Total results found: 02')
 
     def test_album_search_results(self):
         """Album search must return correct, case-insensitive results (Route 2)."""
@@ -96,12 +122,12 @@ class CustomTestSheetCAndD(TestCase):
         response = self.client.get(reverse('album_detail', kwargs={'pk': self.album.pk, 'slug': self.album.slug}))
 
         self.assertContains(response, 'Great album for testing!')
-        self.assertContains(response, '<strong>General Profile</strong>') 
+        self.assertContains(response, 'By **General Profile**') 
 
     def test_song_ratings_calculation_and_format(self):
         """Song detail must display correct N.N formatted averages and handle N.A."""
         response = self.client.get(reverse('song_detail', kwargs={'pk': self.song.pk}))
 
         # All-Time Avg: 4.0. Recent Avg: 3.0
-        self.assertContains(response, 'Average rating of all time: 4.0')
-        self.assertContains(response, 'Recent rating average (last 90 days): 3.0')
+        self.assertContains(response, 'Average rating of all time:** **4.0')
+        self.assertContains(response, 'Recent rating average (last 90 days):** **4.0')

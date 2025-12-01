@@ -1,9 +1,9 @@
-from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.generic import DetailView, ListView, UpdateView, CreateView, DeleteView
 from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Avg
 from django.utils import timezone 
 from datetime import timedelta 
@@ -21,7 +21,35 @@ class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
 class DottifyAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     # Is user a DottifyAdmin?
     def test_func(self):
-        return self.request.user.groups.fileter(name='DottifyAdmin').exists()
+        return self.request.user.groups.filter(name='DottifyAdmin').exists()
+    
+# --- Custom Mixin for Authorization ---
+class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    Mixin to check if the user is a DottifyAdmin or the owner of the content.    
+    """
+    def get_owner_user(self):
+        """
+        Must be overridden by the subclass to return the User object         
+        """
+        raise ImproperlyConfigured(
+            f"{self.__class__.__name__} is missing the implementation of get_owner_user()."
+        )
+
+    def test_func(self):
+        user = self.request.user
+        
+        # 1. Admin Check
+        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        if is_admin:
+            return True # Admins always pass
+
+        # 2. Owner Check
+        try:
+            owner_user = self.get_owner_user()
+            return owner_user == user
+        except Exception:            
+            return False
 
 class AlbumDetailView(DetailView):
     model = Album
@@ -55,11 +83,11 @@ class SongDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         song = self.object     
         
-        all_time_avg = song.ratings.aggregate(Avg('stars'))['stars__avg']
+        all_time_avg = song.rating_set.aggregate(Avg('stars'))['stars__avg']
         
         # 90-Day Average
         ninety_days_ago_time = timezone.now() - timedelta(days=90)
-        recent_avg = song.ratings.filter(created_at__gte=ninety_days_ago_time).aggregate(Avg('stars'))['stars__avg']
+        recent_avg = song.rating_set.filter(created_at__gte=ninety_days_ago_time).aggregate(Avg('stars'))['stars__avg']
 
         # format N.N or 'N.A'
         def format_rating(avg_value):
@@ -105,44 +133,47 @@ class HomeView(ListView):
     template_name = 'dottify/home.html'
     context_object_name = 'albums'
 
-    # Controlling all data getting passed to the template
-    def get_context_data(self, **kwargs):
+    # Controlling all data getting passed to the template        
+    def get_context_data(self, **kwargs):        
         context = super().get_context_data(**kwargs)
-        # Initialize everything to empty in the case of the user not meeting specific criteria
-        context['albums'] = Album.objects.none()
-        context['playlists'] = Playlist.objects.none()
-        context['songs'] = Song.objects.none()
+        
+        # Initialize QuerySets to empty/none
+        albums_qs = Album.objects.none()
+        playlists_qs = Playlist.objects.none()
+        songs_qs = Song.objects.none() 
+
         user = self.request.user
-    
+
         is_admin = user.is_authenticated and user.groups.filter(name='DottifyAdmin').exists()
         is_artist = user.is_authenticated and user.groups.filter(name='Artist').exists()
 
-        if user.is_authenticated:        
-            try:
-                dottify_user = DottifyUser.objects.get(user=user)
-            except DottifyUser.DoesNotExist:
-            # If lacks a DottifyUser profile, show nothing.
-            # NOTE: logic is compliaant with the sheet logic despite the test failure
-            # to adhere to the "nothing else shown" rule for logged-in users 
-            # who have no associated content.
-                return context            
+        if user.is_authenticated:            
+            dottify_user = DottifyUser.objects.get(user=user)            
+
             if is_admin:
                 # 1. Admin Logic (All data)
-                context['albums'] = Album.objects.all()
-                context['playlists'] = Playlist.objects.all()
-                context['songs'] = Song.objects.all()
+                albums_qs = Album.objects.all()
+                playlists_qs = Playlist.objects.all()
+                songs_qs = Song.objects.all()
             elif is_artist:
                 # 2. Artist Logic (Only own albums)
-                context['albums'] = Album.objects.filter(artist_account=dottify_user)
-                
+                albums_qs = Album.objects.filter(artist_account=dottify_user)
             else:
                 # 3. General User Logic (Only own playlists)
-                context['playlists'] = Playlist.objects.filter(owner=dottify_user)
-         
+                playlists_qs = Playlist.objects.filter(owner=dottify_user)
         else:
-        # Logic for Anonymous Users (albums and public playlists)
-            context['albums'] = Album.objects.all()
-            context['playlists'] = Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
+            # 4. Logic for Anonymous Users (albums and public playlists)
+            albums_qs = Album.objects.all()
+            playlists_qs = Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
+
+        context['albums'] = albums_qs
+        context['playlists'] = playlists_qs
+        context['songs'] = songs_qs # Will be empty for most users
+              
+        total_count = albums_qs.count() 
+        # Total results found: N' requirement.
+        context['total_results_found'] = total_count
+        return context
 
 class AlbumSearchView(LoginRequiredMixin, ListView):
     model = Album
@@ -166,6 +197,7 @@ class AlbumSearchView(LoginRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['query'] = self.query
+        context['total_results_found'] = context['albums'].count()
         return context 
     
 class AlbumCreateView(LoginRequiredMixin, CreateView):    
@@ -187,78 +219,31 @@ class AlbumCreateView(LoginRequiredMixin, CreateView):
         form.instance.artist_account = dottify_user      
         return super().form_valid(form)
 
-class AlbumUpdateView(LoginRequiredMixin, UpdateView):
+class AlbumUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     model = Album 
     form_class = AlbumForm
     template_name = 'dottify/album_form.html'
 
-    # Authorization on GET
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        user = self.request.user
-        
-        # Skip check if admin admin
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
-        
-        if not user.is_authenticated:
-            raise Http404("You must be logged in to edit an album.")
-
-        # if Artist AND not the album owner, deny access (403)
-        if not is_admin:
-            try:                
-                album_artist_user = obj.artist_account.user 
-                
-                if album_artist_user != user:                  
-                    return HttpResponseForbidden("You are not authorized to edit this album.")
-                    
-            except AttributeError:
-                # If account or link is missing
-                 return HttpResponseForbidden("Album ownership could not be verified.")
-
-        return obj
+    # Implementation required by ContentOwnerOrAdminMixin
+    def get_owner_user(self):
+        album = self.get_object() 
+        return album.artist_account.user
 
     # Authorization on POST
-    def form_valid(self, form):
-        user = self.request.user
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()
-        
-        # Re-verify ownership before saving
-        try:
-            album_artist_user = self.get_object().artist_account.user
-        except AttributeError:
-            return HttpResponseForbidden("Album ownership could not be verified during save.")
+    def form_valid(self, form):       
+        return super().form_valid(form)
 
-        if is_admin or album_artist_user == user:         
-            return super().form_valid(form)
-        else:
-            # If authorization failed during POST submission
-            return HttpResponseForbidden("You are not authorized to save changes to this album.")
-
-class AlbumDeleteView(LoginRequiredMixin, DeleteView):
+class AlbumDeleteView(ContentOwnerOrAdminMixin, DeleteView):
     model = Album
     template_name = 'dottify/album_confirm_delete.html'
     
     # successful deletion -> redirect to the homepage.
     success_url = reverse_lazy('home') 
 
-    # override to enforce authorization
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        user = self.request.user
-        
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
-        is_owner = False
-        try:            
-            if obj.artist_account.user == user:
-                is_owner = True
-        except AttributeError:            
-            pass 
-     
-        if not is_admin and not is_owner:
-            return HttpResponseForbidden("You are not authorized to delete this album.")
-
-        # If authorized (Admin OR Owner) proceed
-        return obj
+    # Implementation required by ContentOwnerOrAdminMixin
+    def get_owner_user(self):
+        album = self.get_object() 
+        return album.artist_account.user
     
 class SongCreateView(ArtistRequiredMixin, CreateView):
     model = Song
@@ -272,7 +257,7 @@ class SongCreateView(ArtistRequiredMixin, CreateView):
         kwargs['user'] = self.request.user
         return kwargs
 
-class SongUpdateView(LoginRequiredMixin, UpdateView):
+class SongUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     model = Song
     form_class = SongForm
     template_name = 'dottify/song_form.html'
@@ -285,44 +270,18 @@ class SongUpdateView(LoginRequiredMixin, UpdateView):
         kwargs['user'] = self.request.user
         return kwargs
 
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset) # Tsong being edited
-        user = self.request.user
-        
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
-        is_owner = False
-        try:
-            # Song -> Album -> Artist Account -> User
-            if obj.album.artist_account.user == user:
-                is_owner = True
-        except AttributeError:           
-            pass 
-
-        if not is_admin and not is_owner:
-            return HttpResponseForbidden("You are not authorized to edit this song. You must be the owner of the album it belongs to or a Dottify Admin.")
-
-        return obj
+    # Implementation required by ContentOwnerOrAdminMixin
+    def get_owner_user(self):
+        song = self.get_object() 
+        return song.album.artist_account.user
     
 
-class SongDeleteView(LoginRequiredMixin, DeleteView):
+class SongDeleteView(ContentOwnerOrAdminMixin, DeleteView):
     model = Song
     template_name = 'dottify/song_confirm_delete.html'
     success_url = reverse_lazy('home') 
 
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset) 
-        user = self.request.user
-        
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()        
-        is_owner = False
-        try:
-            # ong -> Album -> Artist Account -> User
-            if obj.album.artist_account.user == user:
-                is_owner = True
-        except AttributeError:            
-            pass 
-        
-        if not is_admin and not is_owner:
-            return HttpResponseForbidden("You are not authorized to delete this song. You must be the owner of the album it belongs to or a Dottify Admin.")
-       
-        return obj
+    # Implementation required by ContentOwnerOrAdminMixin
+    def get_owner_user(self):
+        song = self.get_object() 
+        return song.album.artist_account.user
