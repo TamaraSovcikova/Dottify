@@ -178,21 +178,30 @@ class Rating(models.Model):
     # Link to the Song model
     song = models.ForeignKey(
         'Song', 
-        on_delete=models.CASCADE, 
-        related_name='ratings',
+        on_delete=models.CASCADE,         
         null=False,
         blank=False
     )
 
     stars = models.DecimalField(
-        max_digits=2, # Allows numbers up to 9.9. Must be at least 2 for X.Y.
+        max_digits=2,      
         decimal_places=1, 
         validators=[
-        MinValueValidator(Decimal('0.0')),    # NOTE: check if 0 should be allowed 
-        MaxValueValidator(Decimal('5.0')),     
-        validate_half_step # unsure if this is what they meant by only in increments 
-    ],        
-    )        
+            # Enforce the minimum and maximum range (0 to 5.0)
+            MinValueValidator(0.0), 
+            MaxValueValidator(5.0),
+        ]
+    )     
+
+    # 0.5 increment rule
+    def clean(self):
+        # Check if the stars value is a multiple of 0.5 (e.g., 0.0, 0.5, 1.0, 1.5, ...)        
+        if self.stars is not None and (self.stars * 10) % 5 != 0:
+            raise ValidationError(
+                {'stars': "Rating must be in 0.5 increments (e.g., 1.5, 2.0, 3.5)."}
+            )
+        
+        super().clean()
 
     created_at = models.DateTimeField(auto_now_add=True) # for 90-day calculation
                                      
