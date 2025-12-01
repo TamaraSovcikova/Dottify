@@ -142,8 +142,7 @@ class Playlist(models.Model):
         editable=False      # Prevents modification 
     )
     songs = models.ManyToManyField(
-        'Song',
-        related_name='playlists'
+        'Song'       
     )
     visibility = models.IntegerField(
         choices=Visibility.choices,
@@ -154,8 +153,7 @@ class Playlist(models.Model):
     )    
     owner = models.ForeignKey(
         DottifyUser,
-        on_delete=models.CASCADE, # If the owner is deleted, the playlist should be deleted
-        related_name='playlists',
+        on_delete=models.CASCADE, # If the owner is deleted, the playlist should be deleted        
         blank=False,
         null=False
     )
