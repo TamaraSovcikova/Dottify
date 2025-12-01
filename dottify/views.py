@@ -1,4 +1,4 @@
-from django.http import Http404, HttpResponseForbidden
+from django.http import Http404, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.generic import DetailView, ListView, UpdateView, CreateView, DeleteView
 from django.shortcuts import redirect
@@ -53,19 +53,18 @@ class SongDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        song = self.object # The song instance     
+        song = self.object     
         
-        all_time_avg = song.ratings.aggregate(Avg('score'))['score__avg']
+        all_time_avg = song.ratings.aggregate(Avg('stars'))['stars__avg']
         
         # 90-Day Average
-        ninety_days_ago = timezone.now() - timedelta(days=90)
-        recent_avg = song.ratings.filter(created_at__gte=ninety_days_ago).aggregate(Avg('score'))['score__avg']
+        ninety_days_ago_time = timezone.now() - timedelta(days=90)
+        recent_avg = song.ratings.filter(created_at__gte=ninety_days_ago_time).aggregate(Avg('stars'))['stars__avg']
 
         # format N.N or 'N.A'
         def format_rating(avg_value):
-            if avg_value is not None:
-                # Format to exactly one decimal place
-                return f"{avg_value:.1f}"
+            if avg_value is not None:                
+                return f"{avg_value:.1f}" # one decimal place
             return "N.A"
 
         context['all_time_rating'] = format_rating(all_time_avg)
@@ -138,10 +137,17 @@ class HomeView(ListView):
             context['albums'] = Album.objects.all()
             context['playlists'] = Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
 
-class AlbumSearchView(LoginRequiredMixin, ListView):
+class AlbumSearchView(ListView):
     model = Album
     template_name = 'dottify/album_search.html'
     context_object_name = 'albums'
+
+    def dispatch(self, request, *args, **kwargs):
+        # Authentication Check (Tsince not suing loginrequiredmixin)
+        if not request.user.is_authenticated:           
+            return HttpResponse('Unauthorized', status=401)        
+        
+        return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
         # base queryset (all albums)
