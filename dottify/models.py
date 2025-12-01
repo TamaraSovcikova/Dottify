@@ -75,8 +75,9 @@ class Album(models.Model):
         ]
     
     def save(self, *args, **kwargs):
-        # Dynamic slugs are updateable
-        self.slug = slugify(self.title)
+        # Ensure the slug is generated if it's new OR if the title has changed
+        if not self.slug or kwargs.pop('update_slug', True):
+            self.slug = slugify(self.title)
         super().save(*args, **kwargs)
 
 # returns a formatted string combiting the title and artist's name

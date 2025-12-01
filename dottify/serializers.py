@@ -11,17 +11,10 @@ class AlbumSerializer(serializers.ModelSerializer):
             'id','cover_image','title','artist_name', 'retail_price', 'format', 'release_date', 'slug', 'song_set'
         ]
         # artist_account left seperate since it must not be visisble or set via this route
-        read_only_fields = ['artist_account']
+        read_only_fields = ['artist_account', 'slug']
     
     def get_song_set(self,obj):
-        return [song.title for song in obj.tracks.all()]
-    
-     # needed to overrie to handle the missing artist_account field
-    def create(self,validated_data):
-        return Album.objects.create(**validated_data) #unpacking the data for create
-    
-    def update(self, instance,validated_data):
-        return super().update(instance, validated_data)
+        return [song.title for song in obj.tracks.all()]    
 
 
 class SongSerializer(serializers.ModelSerializer):

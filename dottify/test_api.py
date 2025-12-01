@@ -12,11 +12,11 @@ class CustomTestSheetD_API(APITestCase):
         self.artist_user = User.objects.create_user(username='artist', password='password')
         self.artist_user.groups.add(self.artist_group)
         
-        self.general_user = User.objects.create_us
+        self.general_user = User.objects.create_user(username='general', password='password')
         self.artist_profile = DottifyUser.objects.create(user=self.artist_user, display_name='Artist Owner')
         self.album = Album.objects.create(
             title='Original Title', artist_account=self.artist_profile, artist_name='Artist Test',
-            format='CD', release_date='2023-01-01', retail_price='5.00'
+            format='SNGL', release_date='2023-01-01', retail_price='5.00'
         )
         self.album_url = f'/api/albums/{self.album.id}/'
         
@@ -24,9 +24,9 @@ class CustomTestSheetD_API(APITestCase):
         self.update_data = {
             'title': 'Hacked Title',
             'artist_name': 'Artist Hack Test',
-            'format': 'CD',
+            'format': 'DLUX',
             'release_date': '2020-01-01',
-            'retail_price': '15.00',           
+            'retail_price': '15.00',
         }
 
     def test_api_album_update_unauthorized_user_fails(self):
@@ -39,6 +39,7 @@ class CustomTestSheetD_API(APITestCase):
         # Attempt to update the album 
         response = self.client.put(self.album_url, self.update_data, format='json')        
         
+        print(f"--- Unauthorized test received status: {response.status_code} ---")
         self.assertTrue(response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN])
 
         # Verify the album title was NOT changed
@@ -51,8 +52,7 @@ class CustomTestSheetD_API(APITestCase):
         
         self.update_data['title'] = 'Updated Title by Owner'
 
-        response = self.client.put(self.album_url, self.update_data, format='json')        
-        
+        response = self.client.put(self.album_url, self.update_data, format='json')          
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         
         # Verify the album title WAS changed

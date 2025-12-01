@@ -3,13 +3,42 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework import permissions
 
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 from django.db.models import Avg
 
+
+class IsOwnerOrReadOnly(permissions.BasePermission):
+    """
+    Custom permission to only allow the owner (Album's artist_account) or 
+    a DottifyAdmin to edit or delete the Album object.
+    """
+
+    def has_object_permission(self, request, view, obj):
+        # Allow (GET, HEAD, OPTIONS) for viewing by anyone
+        if request.method in permissions.SAFE_METHODS:
+            return True        
+        
+        if not request.user.is_authenticated:
+            return False
+            
+        is_admin = request.user.groups.filter(name='DottifyAdmin').exists()
+        if is_admin:
+            return True
+        
+        # (PUT/PATCH/DELETE) are only allowed to the owner.
+        # Check if obj.artist_account is set and its linked User matches request.user
+        if obj.artist_account and obj.artist_account.user == request.user:
+            return True
+
+        return False
+
 # --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
 class AlbumViewSet(viewsets.ModelViewSet):  
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+    
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
