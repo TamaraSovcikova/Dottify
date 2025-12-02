@@ -29,6 +29,10 @@ urlpatterns = [
     path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),
 ]
 
+urlpatterns += [
+    path('datawizard/', include('data_wizard.urls', namespace='data_wizard_ns'))
+]
+
 # --- HTML VIEWS ---
 urlpatterns += [
     #Route 1: Home View
