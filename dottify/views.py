@@ -226,6 +226,13 @@ class AlbumCreateView(ArtistOrAdminRequiredMixin, CreateView):
 
         form.instance.artist_account = dottify_user      
         return super().form_valid(form)
+    
+    def get_success_url(self):        
+        # Reverse to generate the URL for the album detail page.
+        return reverse('album_detail', kwargs={
+            'pk': self.object.pk,  
+            'slug': self.object.slug 
+        })
 
 class AlbumUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     model = Album 
@@ -240,6 +247,12 @@ class AlbumUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     # Authorization on POST
     def form_valid(self, form):       
         return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse('album_detail', kwargs={
+            'pk': self.object.pk,
+            'slug': self.object.slug
+        })
 
 class AlbumDeleteView(ContentOwnerOrAdminMixin, DeleteView):
     model = Album
@@ -285,9 +298,7 @@ class SongCreateView(ArtistOrAdminRequiredMixin, CreateView):
 class SongUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     model = Song
     form_class = SongForm
-    template_name = 'dottify/song_form.html'
-
-    # UpdateView uses default success_url so i dont have to define
+    template_name = 'dottify/song_form.html'    
     
     def get_form_kwargs(self):
         """Pass the current user for filtering"""
@@ -299,6 +310,9 @@ class SongUpdateView(ContentOwnerOrAdminMixin, UpdateView):
     def get_owner_user(self):
         song = self.get_object() 
         return song.album.artist_account.user
+    
+    def get_success_url(self):        
+        return reverse('song_detail', kwargs={'pk': self.object.pk})
     
 
 class SongDeleteView(ContentOwnerOrAdminMixin, DeleteView):
