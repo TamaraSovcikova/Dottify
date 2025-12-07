@@ -3,30 +3,34 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import permissions # Keep for [permissions.AllowAny]
 from rest_framework import filters
 
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 from django.db.models import Avg
 
+
 class AlbumViewSet(viewsets.ModelViewSet):
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title'] # Only title for Route 2
+    search_fields = ['title']  # Only title for Route 2
+
 
 class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SongSerializer
 
     def get_queryset(self):
-        # drf-nested-routers' should auto pass the parents primary key - kwargs dict - parent_lookup[value]
+        # drf-nested-routers' should auto pass the parents
+        # primary key - kwargs dict - parent_lookup[value]
         return Song.objects.filter(album__pk=self.kwargs['album_pk'])
+
 
 class SongViewSet(viewsets.ModelViewSet):
     queryset = Song.objects.all()
     serializer_class = SongSerializer
+
 
 class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PlaylistSerializer
@@ -35,6 +39,7 @@ class PlaylistViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         # only public ones are returned
         return Playlist.objects.filter(visibility=Playlist.Visibility.PUBLIC)
+
 
 class StatisticsAPIView(APIView):
     def get(self, request, format=None):

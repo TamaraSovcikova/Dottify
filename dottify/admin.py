@@ -1,12 +1,5 @@
 from django.contrib import admin
-from .models import (
-    DottifyUser, 
-    Album, 
-    Song, 
-    Playlist, 
-    Rating, 
-    Comment
-)
+from .models import (DottifyUser, Album, Song, Playlist, Rating, Comment)
 # Register your models here.
 admin.site.register(DottifyUser)
 admin.site.register(Album)

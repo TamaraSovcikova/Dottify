@@ -27,31 +27,30 @@ album_router.register(r'songs', NestedSongViewSet, basename='album-songs')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/', include(album_router.urls)),
-    path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),    
+    path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),
 ]
 
 urlpatterns += [
     path('datawizard/', include('data_wizard.urls', namespace='data_wizard_ns')),
-    path('accounts/', include('django.contrib.auth.urls'))    
+    path('accounts/', include('django.contrib.auth.urls'))
 ]
 
 # --- HTML VIEWS ---
-urlpatterns += [   
+urlpatterns += [
     path('', HomeView.as_view(), name='home'),
-    
+
     path('albums/search/', AlbumSearchView.as_view(), name='album_search'),
     path('albums/new/', AlbumCreateView.as_view(), name='album_create'),
     path('albums/<int:pk>/edit/', AlbumUpdateView.as_view(), name='album_edit'),
     path('albums/<int:pk>/delete/', AlbumDeleteView.as_view(), name='album_delete'),
     path('albums/<int:pk>/', AlbumDetailView.as_view(), name='album_detail_pk'),
     path('albums/<int:pk>/<slug:slug>/', AlbumDetailView.as_view(), name='album_detail'),
-   
+
     path('users/<int:pk>/', UserDetailView.as_view(), name='user_detail_pk'),
     path('users/<int:pk>/<slug:slug>/', UserDetailView.as_view(), name='user_detail'),
-   
+
     path('songs/<int:pk>/', SongDetailView.as_view(), name='song_detail'),
     path('songs/new/', SongCreateView.as_view(), name='song_create'),
     path('songs/<int:pk>/edit/', SongUpdateView.as_view(), name='song_edit'),
-    path('songs/<int:pk>/delete/', SongDeleteView.as_view(), name='song_delete'), 
-   
+    path('songs/<int:pk>/delete/', SongDeleteView.as_view(), name='song_delete'),
 ]
