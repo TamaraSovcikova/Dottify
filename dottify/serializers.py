@@ -29,7 +29,7 @@ class AlbumSerializer(serializers.ModelSerializer):
         try:
             dottify_user = DottifyUser.objects.get(user=user)
         except DottifyUser.DoesNotExist:
-            # This should ideally be caught by permissions but is a safety net.
+            # is a safety net since this should ideally be caught by permissions
             raise serializers.ValidationError({"artist_account": "No DottifyUser profile found for the logged-in user."})
 
         validated_data['artist_account'] = dottify_user

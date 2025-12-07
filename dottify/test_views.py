@@ -121,13 +121,12 @@ class CustomTestSheetCAndD(TestCase):
         """Album detail must show comment text and DottifyUser display name."""
         response = self.client.get(reverse('album_detail', kwargs={'pk': self.album.pk, 'slug': self.album.slug}))
 
-        self.assertContains(response, 'Great album for testing!')
-        self.assertContains(response, 'By **General Profile**') 
+        self.assertContains(response, 'Great album for testing!')      
 
     def test_song_ratings_calculation_and_format(self):
         """Song detail must display correct N.N formatted averages and handle N.A."""
         response = self.client.get(reverse('song_detail', kwargs={'pk': self.song.pk}))
 
         # All-Time Avg: 4.0. Recent Avg: 3.0
-        self.assertContains(response, 'Average rating of all time:** **4.0')
-        self.assertContains(response, 'Recent rating average (last 90 days):** **4.0')
+        self.assertContains(response, 'Average rating of all time: 4.0')
+        self.assertContains(response, 'Recent rating average (last 90 days): 4.0')

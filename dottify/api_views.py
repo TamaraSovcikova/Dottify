@@ -10,15 +10,13 @@ from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
 from django.db.models import Avg
 
-# --- Main viewset (/api/albums/ and /api/albums/[id]/) ---
 class AlbumViewSet(viewsets.ModelViewSet):
     queryset = Album.objects.all()
     serializer_class = AlbumSerializer
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title'] # Only title is used for search in Route 2
+    search_fields = ['title'] # Only title for Route 2
 
-# --- Nested viewset (/api/albums/[album id]/songs/ and /[song id]/) ---
 class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SongSerializer
 

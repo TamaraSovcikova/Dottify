@@ -10,7 +10,7 @@ from datetime import timedelta
 from django.contrib.auth.models import User
 
 class DottifyUser(models.Model):
-    # Links to the built-in Django User model
+    # Links built-in Django User model
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

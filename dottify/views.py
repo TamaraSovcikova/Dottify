@@ -13,7 +13,7 @@ from django.utils.text import slugify
 
 class ArtistOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
-    Checks if the user is authenticated and belongs to either the 'Artist' 
+    Checks if the user is authenticated and in the 'Artist' 
     or the 'DottifyAdmin' group.
     """
     def test_func(self):
@@ -30,7 +30,6 @@ class DottifyAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.groups.filter(name='DottifyAdmin').exists()
     
-# --- Custom Mixin for Authorization ---
 class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     Mixin to check if the user is a DottifyAdmin or the owner of the content.    
@@ -80,8 +79,7 @@ class AlbumDetailView(DetailView):
         if current_slug != required_slug or 'slug' not in kwargs:
             # Redirect to the canonical URL with the correct slug
             return redirect(
-                reverse('album_detail', kwargs={'pk': self.object.pk, 'slug': required_slug}),
-                permanent=True
+                reverse('album_detail', kwargs={'pk': self.object.pk, 'slug': required_slug})                
             )
 
         context = self.get_context_data(object=self.object)
@@ -133,8 +131,7 @@ class UserDetailView(DetailView):
                         'pk': self.object.pk, 
                         'slug': required_slug
                     }
-                ),    
-                permanent=True            
+                ),       
             )
             
         context = self.get_context_data(object=self.object)
@@ -218,8 +215,7 @@ class AlbumCreateView(ArtistOrAdminRequiredMixin, CreateView):
     template_name = 'dottify/album_form.html'
    
     def form_valid(self, form):
-        # REQUIRED LOGIC -> Automatically set the 'artist_account' field        
-        
+        # REQUIRED LOGIC -> Automatically set the 'artist_account' field   
         try:            
             dottify_user = DottifyUser.objects.get(user=self.request.user)
         except DottifyUser.DoesNotExist:           
