@@ -4,6 +4,7 @@ from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import filters
+from django.utils.translation import gettext_lazy as _
 
 from .models import Album, DottifyUser, Song, Playlist
 from .serializers import AlbumSerializer, PlaylistSerializer, SongSerializer
@@ -15,7 +16,7 @@ class AlbumViewSet(viewsets.ModelViewSet):
     serializer_class = AlbumSerializer
 
     filter_backends = [filters.SearchFilter]
-    search_fields = ['title']  # Only title for Route 2
+    search_fields = ['title']
 
 
 class NestedSongViewSet(viewsets.ReadOnlyModelViewSet):
@@ -68,3 +69,4 @@ class StatisticsAPIView(APIView):
         }
 
         return Response(data)
+    

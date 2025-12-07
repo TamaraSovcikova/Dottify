@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from django.utils.translation import gettext_lazy as _
 from .models import Album, Song, Playlist, DottifyUser
 
 
@@ -17,7 +18,7 @@ class AlbumSerializer(serializers.ModelSerializer):
             UniqueTogetherValidator(
                 queryset=Album.objects.all(),
                 fields=['title', 'artist_name', 'format'],
-                message="An album with this title, artist name, and format already exists."
+                message=_("An album with this title, artist name, and format already exists.")
             )
         ]
 
@@ -31,7 +32,7 @@ class AlbumSerializer(serializers.ModelSerializer):
             dottify_user = DottifyUser.objects.get(user=user)
         except DottifyUser.DoesNotExist:
             # Is a safety net since this should ideally be caught by permissions
-            raise serializers.ValidationError({"artist_account": "No DottifyUser profile found for the logged-in user."})
+            raise serializers.ValidationError({"artist_account": _("No DottifyUser profile found for the logged-in user.")})
 
         validated_data['artist_account'] = dottify_user
 
@@ -50,18 +51,19 @@ class SongSerializer(serializers.ModelSerializer):
         user = self.context['request'].user
         album = validated_data.get('album')
 
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        # Group name localized
+        is_admin = user.groups.filter(name=_('DottifyAdmin')).exists()
 
         if not is_admin:
             try:
                 album_owner_user = album.artist_account.user
             except AttributeError:
                 # Album is missing an artist_account link
-                raise serializers.ValidationError({"album": "The album ownership cannot be verified."})
+                raise serializers.ValidationError({"album": _("The album ownership cannot be verified.")})
 
             if album_owner_user != user:
                 # If the user is not an Admin AND not the owner -> reject
-                raise serializers.ValidationError({"album": "You are not authorized to add a song to this album."})
+                raise serializers.ValidationError({"album": _("You are not authorized to add a song to this album.")})
 
         return Song.objects.create(**validated_data)
 

@@ -32,11 +32,11 @@ def get_max_release_date():
 class Album(models.Model):
 
     class Format(models.TextChoices):
-        SINGLE = 'SNGL', 'Single'
-        REMASTER = 'RMST', 'Remaster'
-        DELUXE = 'DLUX', 'Deluxe Edition'
-        COMPILATION = 'COMP', 'Compilation'
-        LIVE_RECORDING = 'LIVE', 'Live Recording'
+        SINGLE = 'SNGL', _('Single')
+        REMASTER = 'RMST', _('Remaster')
+        DELUXE = 'DLUX', _('Deluxe Edition')
+        COMPILATION = 'COMP', _('Compilation')
+        LIVE_RECORDING = 'LIVE', _('Live Recording')
 
     cover_image = models.ImageField(default='no_cover.jpg', blank=True, null=True)
     title = models.CharField(max_length=800)
@@ -76,7 +76,7 @@ class Album(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.title} by {self.artist_name}"
+        return _("%(title)s by %(artist_name)s") % {'title': self.title, 'artist_name': self.artist_name}
 
 
 class Song(models.Model):
@@ -128,9 +128,9 @@ class Song(models.Model):
 
 class Playlist(models.Model):
     class Visibility(models.IntegerChoices):
-        HIDDEN = 0, 'Hidden'  # Default
-        UNLISTED = 1, 'Unlisted'
-        PUBLIC = 2, 'Public'
+        HIDDEN = 0, _('Hidden') # Default
+        UNLISTED = 1, _('Unlisted')
+        PUBLIC = 2, _('Public')
 
     name = models.CharField(null=False, blank=False)
     created_at = models.DateTimeField(
@@ -155,14 +155,17 @@ class Playlist(models.Model):
 
     def __str__(self):
         # Displays the name and the owner for clarity
-        return f"{self.name} (Owner: {self.owner.display_name})"
+        return _("%(name)s (Owner: %(owner_display_name)s)") % {
+            'name': self.name, 
+            'owner_display_name': self.owner.display_name
+        }
 
 
 def validate_half_step(value):
     """Checks if a rating value is in 0.5 increments (e.g., 1.5, 2.0, 3.5)."""
     if value is not None and (value * 10) % 5 != 0:
         raise ValidationError(
-            "Rating must be in 0.5 increments (e.g., 1.5, 2.0, 3.5)."
+            _("Rating must be in 0.5 increments (e.g., 1.5, 2.0, 3.5).")
         )
 
 
@@ -189,7 +192,10 @@ class Rating(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)  # For 90-day calculation
 
     def __str__(self):
-        return f"Rating: {self.stars} for Song: {self.song.title}"
+        return _("Rating: %(stars)s for Song: %(song_title)s") % {
+            'stars': self.stars, 
+            'song_title': self.song.title
+        }
 
 
 class Comment(models.Model):

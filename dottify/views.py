@@ -10,6 +10,7 @@ from datetime import timedelta
 from .models import Album, Playlist, Song, DottifyUser
 from .forms import AlbumForm, SongForm
 from django.utils.text import slugify
+from django.utils.translation import gettext_lazy as _
 
 
 class ArtistOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -19,19 +20,19 @@ class ArtistOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
     def test_func(self):
         user = self.request.user
-        is_artist = user.groups.filter(name='Artist').exists()
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        is_artist = user.groups.filter(name=_('Artist')).exists()
+        is_admin = user.groups.filter(name=_('DottifyAdmin')).exists()
         return is_artist or is_admin
 
 
 class ArtistRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='Artist').exists()
+        return self.request.user.groups.filter(name=_('Artist')).exists()
 
 
 class DottifyAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.groups.filter(name='DottifyAdmin').exists()
+        return self.request.user.groups.filter(name=_('DottifyAdmin')).exists()
 
 
 class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -43,14 +44,16 @@ class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
         Must be overridden by the subclass to return the User object
         """
         raise ImproperlyConfigured(
-            f"{self.__class__.__name__} is missing the implementation of get_owner_user()."
+            _("%(class_name)s is missing the implementation of get_owner_user().") % {
+                'class_name': self.__class__.__name__
+            }
         )
 
     def test_func(self):
         user = self.request.user
 
         # 1. Admin Check
-        is_admin = user.groups.filter(name='DottifyAdmin').exists()
+        is_admin = user.groups.filter(name=_('DottifyAdmin')).exists()
         if is_admin:
             return True  # Admins always pass
 
@@ -63,7 +66,7 @@ class ContentOwnerOrAdminMixin(LoginRequiredMixin, UserPassesTestMixin):
 
     def handle_no_permission(self):
         if self.request.user.is_authenticated:
-            return HttpResponseForbidden("You do not have permission to view or modify this content.")
+            return HttpResponseForbidden(_("You do not have permission to view or modify this content."))
 
         # If not authenticated, use default LoginRequiredMixin
         return super().handle_no_permission()
@@ -110,7 +113,7 @@ class SongDetailView(DetailView):
         def format_rating(avg_value):
             if avg_value is not None:
                 return f"{avg_value:.1f}"  # one decimal place
-            return "N.A"
+            return _("N.A")
 
         context['all_time_rating'] = format_rating(all_time_avg)
         context['recent_rating'] = format_rating(recent_avg)
@@ -160,8 +163,8 @@ class HomeView(ListView):
 
         user = self.request.user
 
-        is_admin = user.is_authenticated and user.groups.filter(name='DottifyAdmin').exists()
-        is_artist = user.is_authenticated and user.groups.filter(name='Artist').exists()
+        is_admin = user.is_authenticated and user.groups.filter(name=_('DottifyAdmin')).exists()
+        is_artist = user.is_authenticated and user.groups.filter(name=_('Artist')).exists()
 
         if user.is_authenticated:
             dottify_user = DottifyUser.objects.get(user=user)
@@ -187,7 +190,7 @@ class HomeView(ListView):
         context['songs'] = songs_qs
 
         total_count = albums_qs.count()
-        # Total results found: N' requirement.
+        # This is a number, so we keep the key as is.
         context['total_results_found'] = total_count
         return context
 
@@ -227,7 +230,7 @@ class AlbumCreateView(ArtistOrAdminRequiredMixin, CreateView):
         try:
             dottify_user = DottifyUser.objects.get(user=self.request.user)
         except DottifyUser.DoesNotExist:
-            form.add_error(None, "You do not have an associated Dottify profile to create albums.")
+            form.add_error(None, _("You do not have an associated Dottify profile to create albums."))
             return self.form_invalid(form)
 
         form.instance.artist_account = dottify_user
@@ -293,14 +296,14 @@ class SongCreateView(ArtistOrAdminRequiredMixin, CreateView):
         selected_album = form.cleaned_data.get('album')
 
         # --- Post Authorization Check (Route 7) ---
-        if user.groups.filter(name='Artist').exists():
+        if user.groups.filter(name=_('Artist')).exists():
             try:
                 dottify_user = DottifyUser.objects.get(user=user)
             except DottifyUser.DoesNotExist:
-                return HttpResponseForbidden("User profile not found. Cannot create songs.")
+                return HttpResponseForbidden(_("User profile not found. Cannot create songs."))
 
-            if selected_album.artist_account != dottify_user:
-                return HttpResponseForbidden("You can only create songs for your own albums.")
+            if selected_album.artist_account != dottify_user:                
+                return HttpResponseForbidden(_("You can only create songs for your own albums."))
 
         # If the user is an Admin, or is a matching Artist, proceed
         return super().form_valid(form)

@@ -1,5 +1,5 @@
-
 from django import forms
+from django.utils.translation import gettext_lazy as _
 from .models import Album, Song, DottifyUser
 
 
@@ -31,8 +31,8 @@ class SongForm(forms.ModelForm):
 
         # Filters albums based on user’s permissions
         if self.user:
-            is_artist = self.user.groups.filter(name='Artist').exists()
-            is_admin = self.user.groups.filter(name='DottifyAdmin').exists()
+            is_artist = self.user.groups.filter(name=_('Artist')).exists()
+            is_admin = self.user.groups.filter(name=_('DottifyAdmin')).exists()
 
             if is_artist:
                 try:
