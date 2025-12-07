@@ -185,6 +185,7 @@ class HomeView(ListView):
         context['total_results_found'] = total_count
         return context
 
+
 class AlbumSearchView(LoginRequiredMixin, ListView):
     model = Album
     template_name = 'dottify/album_search.html'

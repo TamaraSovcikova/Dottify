@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.urls import path, include
 from rest_framework_nested import routers
 
@@ -26,11 +27,13 @@ album_router.register(r'songs', NestedSongViewSet, basename='album-songs')
 urlpatterns = [
     path('api/', include(router.urls)),
     path('api/', include(album_router.urls)),
-    path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),
+    path('api/statistics/', StatisticsAPIView.as_view(), name='statistics'),    
 ]
 
 urlpatterns += [
-    path('datawizard/', include('data_wizard.urls', namespace='data_wizard_ns'))
+    path('datawizard/', include('data_wizard.urls', namespace='data_wizard_ns')),
+    path('accounts/', include('django.contrib.auth.urls'))
+    
 ]
 
 # --- HTML VIEWS ---
