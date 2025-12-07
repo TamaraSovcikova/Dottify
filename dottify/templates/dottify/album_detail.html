@@ -1,8 +1,30 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 {% block content %}
+    
     <h1>{{ album.title }}</h1>
     <h2>by {{ album.artist_name }}</h2>
+
+    <hr>
     
+    <div class="album-details">
+        {% if album.cover_image %}
+            <p>
+                <img 
+                    src="{{ album.cover_image.url }}" 
+                    alt="Cover image for {{ album.title }}"
+                    style="max-width: 250px; height: auto;"
+                >
+            </p>
+        {% endif %}
+        
+        <p><strong>Release Date:</strong> {{ album.release_date }}</p>
+        <p><strong>Format:</strong> {{ album.get_format_display }}</p>
+        <p><strong>Retail Price:</strong> £{{ album.retail_price }}</p>
+        
+    </div>
+
+    <hr>
+
     <h3>Songs on Album</h3>
     <ul>
         {% for song in album.tracks.all %}
@@ -10,9 +32,12 @@
                 <a href="{% url 'song_detail' pk=song.pk %}">
                     {{ song.position }}. {{ song.title }}
                 </a>
+                <small>
+                    ({{ song.length }} seconds)
+                </small>
             </li>
         {% empty %}
-             <li>No songs in album yet.</li>
+            <li>No songs in album yet.</li>
         {% endfor %}
     </ul>
 
@@ -21,10 +46,11 @@
     <h3>User Comments</h3>
     {% for comment in album.comments.all %}
         <p>
-            {{ comment.comment_text }} (By **{{ comment.get_user_display_name }}**)
+            "{{ comment.comment_text }}" 
+            (By <strong>{{ comment.get_user_display_name }}</strong> on {{ comment.created_at|date:"Y-m-d" }})
         </p>
     {% empty %}
-        <p>No comments</p>
+        <p>No comments.</p>
     {% endfor %}
     
 {% endblock content %}

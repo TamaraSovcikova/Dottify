@@ -2,9 +2,9 @@
 {% block content %}
     <h1>Dottify Homepage</h1>
 
-    <p>Total results found: {{ total_results_found }}</p>
     {% if albums %}        
-        <h2>Albums</h2>
+    <h2>Albums</h2>
+    <p>Total results found: {{ total_results_found }}</p>
         <ul>
             {% for album in albums %}
                 <li>
@@ -17,6 +17,7 @@
             {% endfor %}
         </ul>
     {% endif %}
+    
 
     {% if playlists %}
         <h2>Playlists</h2>

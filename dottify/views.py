@@ -9,6 +9,7 @@ from django.utils import timezone
 from datetime import timedelta 
 from .models import Album, Playlist, Song, DottifyUser
 from .forms import AlbumForm, SongForm
+from django.utils.text import slugify
 
 class ArtistOrAdminRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
@@ -121,8 +122,8 @@ class UserDetailView(DetailView):
         self.object = self.get_object()
         
         # Required canonical slug        
-        required_slug = self.object.display_name.lower().replace(' ', '-')        
-        current_slug = kwargs.get('slug') 
+        required_slug = slugify(self.object.display_name)        
+        current_slug = kwargs.get('slug')
         
         if current_slug != required_slug or current_slug is None:            
             return redirect(
@@ -132,7 +133,8 @@ class UserDetailView(DetailView):
                         'pk': self.object.pk, 
                         'slug': required_slug
                     }
-                ),                
+                ),    
+                permanent=True            
             )
             
         context = self.get_context_data(object=self.object)
