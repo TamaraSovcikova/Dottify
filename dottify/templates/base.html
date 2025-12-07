@@ -3,12 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block title %}Dottify{% endblock %}</title>
     
     {% block extra_head %}
     {% endblock %}
 </head>
 <body>
+    
+    <header>
+        <a href="{% url 'home' %}">Dottify Home</a>
+        
+        <div style="float: right;">
+            {% if user.is_authenticated %}
+                <span>Hello, **{{ user.username }}**</span>
+                
+                <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit">Log Out</button>
+                </form>
+            {% else %}
+                <a href="{% url 'login' %}">Log In</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <hr>
+    
     {% block content %}
     {% endblock %}
 
