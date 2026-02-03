@@ -20,20 +20,17 @@ It allows users to browse albums, create playlists, submit comments and ratings,
 ### Tech Stack
 
 #### Backend
-- **Python & Django** — robust framework for models, views, and REST API  
+- **Python & Django** — framework for models, views, and REST API  
 - **Django REST Framework** — structured API views and serialization  
 - **SQLite** — lightweight database for development and testing  
 - **Django Testing Framework** — unit and integration testing
 
 #### Frontend
-- **HTML, CSS & Bootstrap** — responsive, accessible UI templates  
+- **HTML, CSS & Bootstrap**  
 - **Django Templating Engine** — dynamic content rendering
 
-#### Dev Practices
-- **Version Control with Git** — meaningful commits and regular pushes  
-- **PEP8 Code Style** — clean, maintainable Python code  
-- **Class-based Views, Mixins & ViewSets** — reusable and scalable design  
-
+#### Dev Practices  
+- **PEP8 Code Style**  
 ---
 
 ### License
